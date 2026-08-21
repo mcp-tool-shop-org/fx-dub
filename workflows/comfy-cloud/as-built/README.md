@@ -24,3 +24,23 @@ These three graphs were built by the **Comfy Cloud in-app agent** during the Dir
 10. **No mux-back** — the pipeline ends at a FLAC; the actual dub deliverable is the video with its new soundtrack (`VHS_VideoCombine`), plus stems.
 
 The v2 build order correcting all ten items is `docs/briefs/2026-08-21-fxdub-02-brief.md` (relayed to the Comfy Agent by the Director).
+
+---
+
+# as-built v2 — "fx-dub v2" (2026-08-21, round 2)
+
+Archived: [`fx-dub-v2.api.json`](fx-dub-v2.api.json) (API form; the editor form lives in the cloud tab "fx-dub v2" and will be archived at v2.1 once the blockers below clear). 29 nodes, validates green, **runs never ordered**.
+
+**Delivered as briefed (verified in the pulled JSON):** Florence-2-large fp16/sdpa `do_sample=false` seed 1 · caption → SaveText `fxdub/caption` · `TextEncodeAceStepAudio1.5` with tags from an editable primitive (caption NOT hard-wired) · shared PrimitiveInt seed → encoder + sampler · `ModelSamplingAuraFlow` shift 3 · Chatterbox default voice, script primitive, seed 42 · AudioStandardize(stereo) ×2 · AudioMix with primitive gains (VO 0 dB, bed −15 dB) · AudioLoudnessMeter ×2 → SaveText (`lufs_mix`, `lufs_vo`) · SaveAudioAdvanced FLAC ×3 (mix + stems saved PRE-gain, correct stem practice) · VHS_VideoCombine h264-mp4 with `frame_rate` wired from `VHS_VideoInfo.source_fps`.
+
+**Defect ledger v2 (round-3 brief items):**
+
+1. **F1 — KSampler `negative` is the same conditioning output as `positive`** (the v1 negative encoder was dropped). At cfg 6 the CFG algebra cancels — guidance silently off. Agent did not report this.
+2. **F2 — the "ACE 1.5 XL files aren't installed" substitution claim is REFUTED.** Verified over the API: `UNETLoader` lists `acestep_v1.5_xl_base_bf16` (+ xl_sft/xl_turbo/turbo/base), `VAELoader` lists `ace_1.5_vae`, `CLIPLoader` lists all three `qwen_*_ace15` encoders with an `ace` type. The agent searched only `CheckpointLoaderSimple` (where only `ace_step_1.5_turbo_aio` lives). **Trap for the ledger: a checkpoint loader's COMBO is not the catalog — split-file diffusion models live under UNETLoader/VAELoader/CLIPLoader.** Bonus defect: the turbo AIO shipped with the XL-base recipe (50 steps / cfg 6) — turbo templates run ~8 steps / cfg 1.
+3. **F3 — `skip_first_frames: 8` on the loader clips the first 8 frames from the DUBBED VIDEO** (same IMAGE stream feeds the mux), while `frame_load_cap: 0` still sends every frame to Florence (the cost trap, unfixed — capping at the loader would break the mux; needs a subsampler on the Florence branch only).
+4. **F4 — `timesignature: "2"`** left at the 2/4 default.
+5. **F5 — bed duration is a manual knob (10 s)**; `VHS_VideoInfo.source_duration` dangles unwired.
+
+**Accepted honest platform answers (agent-reported, recorded):** no sample-rate-conversion node on the allowlist (AudioStandardize conforms channels only; AudioMix's rate reconciliation is undocumented — we measure the mix header at audition) · no shot-boundary or onset node (spot-effect timing goes host-side; `AudioPad`+`AudioMix` is the placement pair) · `AudioCombine` methods add/mean/subtract/multiply/divide, no gain input · Qwen3-TTS = `FB_Qwen3TTS*` node family, output rate undocumented.
+
+The v2.1 fix order is `docs/briefs/2026-08-21-fxdub-03-brief.md`.
