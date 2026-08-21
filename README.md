@@ -36,7 +36,8 @@ video ─► describe (Florence-2, deterministic)
 | [Design rationale](docs/design/2026-08-21-fxdub-v1.dispatch.md) — 45 sourced findings behind every default | ✅ citations externally verified ([record](docs/design/2026-08-21-fxdub-v1.dispatch.verify.md), Ed25519 receipt in-repo) |
 | [Knowledge Base](docs/knowledge-base.md) — every option, honest licenses, measured costs | ✅ |
 | [As-built graphs](workflows/comfy-cloud/as-built/) — the in-app agent's v1, pulled over the API | ✅ archived with a [10-item defect ledger](workflows/comfy-cloud/as-built/README.md) |
-| As-built v2 — the agent's 29-node rebuild, pulled + wire-verified ([ledger](workflows/comfy-cloud/as-built/README.md)) | ✅ archived; 3 blockers logged |
+| [Agent onboarding](AGENTS.md) + project database ([kb/fxdub.db](kb/README.md)) — nodes, models, runs, traps, decisions, open actions | ✅ live; rebuilt each session |
+| As-built v2 — the agent's 29-node rebuild, pulled + wire-verified ([ledger](workflows/comfy-cloud/as-built/README.md)) | ✅ archived + restored server-side after a tab clobber; 3 blockers logged |
 | [v2.1 fix brief](docs/briefs/2026-08-21-fxdub-03-brief.md) — restores the measured ACE stack, fixes CFG/frame defects | 📨 awaiting relay |
 | v2.1 verification → Director's audition run → host runner, event-timeline spot effects | ⏳ next |
 
