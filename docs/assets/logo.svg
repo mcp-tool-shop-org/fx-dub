@@ -1,12 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 1604 524" width="1604" height="524">
+  <!-- editable approximation of the shipped raster banner (logo.png, Director-supplied 2026-08-21);
+       glyph geometry synced to it — bars short/tall/tallest/tall, frame #37475A -->
   <rect x="20" y="20" width="1600" height="520" rx="28" fill="#0F172A" stroke="#1E293B" stroke-width="2"/>
-  <rect x="150" y="140" width="280" height="280" rx="44" fill="none" stroke="#334155" stroke-width="16"/>
+  <rect x="150" y="140" width="280" height="280" rx="52" fill="none" stroke="#37475A" stroke-width="18"/>
   <g fill="#22D3EE">
-    <rect x="216" y="245" width="26" height="70" rx="13"/>
-    <rect x="258" y="210" width="26" height="140" rx="13"/>
-    <rect x="300" y="175" width="26" height="210" rx="13"/>
-    <rect x="342" y="210" width="26" height="140" rx="13"/>
+    <rect x="205" y="242" width="28" height="76" rx="14"/>
+    <rect x="252" y="207" width="28" height="146" rx="14"/>
+    <rect x="299" y="174" width="28" height="212" rx="14"/>
+    <rect x="346" y="207" width="28" height="146" rx="14"/>
   </g>
-  <text x="520" y="330" font-family="Segoe UI, Arial, sans-serif" font-weight="700" font-size="180" fill="#E2E8F0">fx<tspan fill="#22D3EE">-</tspan>dub</text>
-  <text x="528" y="412" font-family="Segoe UI, Arial, sans-serif" font-weight="600" font-size="30" letter-spacing="7" fill="#64748B">DESCRIBE · GENERATE · MIX · RE-MUX</text>
+  <text x="520" y="330" font-family="Segoe UI, Arial, sans-serif" font-weight="800" font-size="182" fill="#E2E8F0">fx<tspan fill="#22D3EE">-</tspan>dub</text>
+  <text x="528" y="414" font-family="Segoe UI, Arial, sans-serif" font-weight="600" font-size="32" letter-spacing="7" fill="#7C8BA1">DESCRIBE · GENERATE · MIX · RE-MUX</text>
 </svg>
