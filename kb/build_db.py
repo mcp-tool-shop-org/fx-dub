@@ -105,7 +105,8 @@ THREADS = [
     (3, "outbound+reply", "…-03-brief.md + 03-reply (clobber incident)", "closed", "v2.1 fix order -> agent clobbered the v2 tab via open_workflow mid-execution; stopped and asked before proceeding."),
     (4, "outbound+reply", "…-04-{brief,reply,verification}.md", "closed", "GO for v2.1 -> agent built it (33 nodes, validate-only honored, open_workflow used only into a throwaway tab). Verified clean our side: F1-F6 all genuinely fixed."),
     (5, "outbound+reply", "…-05-brief.md + reply", "closed", "2 drift items + audition blockers raised. Agent fixed the Florence task, answered Q1 (no outputs->inputs path exists) and Q2 (ffprobe reads a clean 16/1 from the track; could not see the movie header; recommended pinning frame_rate) — honest about what it could not verify."),
-    (6, "outbound", "…-06-brief.md", "awaiting agent reply", "GO on pinning frame_rate to PrimitiveFloat 16.0 (fixture-specific, documented); Q1 boundary confirmed from our side too (MCP upload_file is image-only) so the Director uploads via browser; asset-library remux declined on cost; filename to be sent after upload."),
+    (6, "outbound+reply", "…-06-brief.md + reply", "closed", "Pin ordered and DONE: agent wired PrimitiveFloat 16.0 -> frame_rate (verified our side: 34 nodes, node 421351014920351 = 16.0), kept VHS_VideoInfo in-graph, recorded the fixture-specific caveat, ran nothing, left the loader untouched."),
+    (7, "outbound", "…-07-brief.md", "awaiting the upload, then the filename", "Disambiguation: a relayed job-id + output URL were mistaken for an instruction; agent correctly refused to infer one and asked. Confirmed our side that the upload had NOT landed (VHS_LoadVideo video COMBO = ['bedroom.mp4']). Told it to hold and change nothing; next message is the bare filename only."),
 ]
 
 TRAPS = [
@@ -130,6 +131,8 @@ TRAPS = [
     ("Unrequested spec drift hides inside a correct-looking fix list: v2.1 silently changed the Florence task from more_detailed_caption to detailed_caption while reporting the Florence block 'carried over'. Diff widget values, not just topology.", "medium", "A"),
     ("There is NO video-into-inputs path over the API, in either toolset: the MCP's upload_file is image-only (.jpg/.jpeg/.png/.webp/.gif; an .mp4 is rejected validation.input) and the in-app agent has no route that writes to the inputs namespace. Video fixtures MUST be uploaded through the Comfy Cloud browser UI.", "high", "A"),
     ("Two probes reading DIFFERENT fields of the same file are not a contradiction: ffprobe reported a clean 16/1 from the TRACK while our atom probe found mvhd (MOVIE header) timescale 0. Both true. When a derived value could read either field, pin a primitive rather than betting on which one the node uses.", "medium", "A"),
+    ("A bare id or URL pasted into an agent thread is NOT an instruction. A job id (billing/provenance) is not a workflow id and is not openable; a signed output URL cannot reach the inputs namespace. Label every reference as reference, and state the instruction in words.", "medium", "A"),
+    ("`VHS_LoadVideo`'s `video` COMBO options ARE the live input-folder listing — read it with get_node to check whether an upload landed and to recover the exact filename, instead of relaying a filename by hand. (Measured 2026-08-21: options were exactly ['bedroom.mp4'], proving the audition upload had not happened.)", "medium", "A"),
 ]
 
 DECISIONS = [
@@ -147,8 +150,8 @@ DECISIONS = [
 ]
 
 NEXT_ACTIONS = [
-    ("Relay round-6 brief (GO on the frame_rate pin; upload handled our side)", "Director", "open"),
-    ("Upload C:/Users/mikey/Downloads/fxdub-audition-clip.mp4 (sha256 9985a8ba…) into Comfy Cloud inputs via the BROWSER (no API path exists), then send the agent the exact filename as it appears in the loader list", "Director", "open"),
+    ("Upload C:/Users/mikey/Downloads/fxdub-audition-clip.mp4 (sha256 9985a8ba…) into Comfy Cloud inputs via the BROWSER upload control on the VHS_LoadVideo node — no API path exists. VERIFIED NOT DONE 2026-08-21 (loader COMBO = ['bedroom.mp4'])", "Director", "open"),
+    ("After upload: read the filename from VHS_LoadVideo's video COMBO (get_node), relay round-7 brief + that bare filename, then one full pull verifying BOTH the filename and that the 16.0 primitive lands on frame_rate with the old source_fps link gone", "advisor session", "open"),
     ("Director auditions v2.1 config -> order the first pinned-seed run on the archived clip (~10-15 cr); then: decode mix FLAC header (SETTLES the mix-bus sample-rate question), read both LUFS manifests, confirm source_fps==16.0 and the dub plays with audio", "Director + advisor", "open"),
     ("Fold ChatterBox/ACE-1.0 measurements into the next readouts model-knowledge wave", "advisor session", "open"),
     ("Host-side rewrite runner (Ollama, deterministic, cached) — dispatch decision D", "future session", "open"),
