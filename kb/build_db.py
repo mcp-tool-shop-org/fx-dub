@@ -83,6 +83,8 @@ RUNS = [
     ("19c22524-a7b0-48ee-bb99-37e1651e8067", "2026-08-21", "FL_ChatterboxTTS demo line, default voice — FIRST e2e cloud measurement", 6.545, 1.7, 24000, 1, 16, 5.800, "7cf405e338dc8921a560fcdab917e714456056a61c7689f8ac0ed20c2a1fe44b", "A", "billing feed + FLAC STREAMINFO decode"),
     ("b81c6dbf-confirmation", "2026-08-18", "ACE 1.5 XL 120 s track + Demucs 4-stem (Motif builds v2 confirmation)", 29.7, 7.9, 48000, 2, 16, 120.0, None, "A", "readouts wave 7 (full UUID in wave receipts)"),
     ("7b966963-confirmation", "2026-08-18", "SA3 Medium SFX 3 s (partial cache); uncached 10 s ~= 9.8 gpu-sec", 1.1, 0.3, 44100, 2, 16, 2.972, None, "A", "readouts wave 7"),
+    ("c4d0c2a8-c308-439a-a704-68423cb41c8e", "2026-08-21", "Wan t2v test clip, 5 s attempt (superseded by the 10 s take)", 172.961, 46.0, None, None, None, None, None, "A", "billing feed"),
+    ("1c4e02a8-0a7f-4806-b548-201160f42530", "2026-08-21", "Wan t2v AUDITION CLIP: 10 s photorealistic rain/cyborg, silent — 161 frames @ 16 fps, h264, no audio track", 511.712, 136.0, None, None, None, 10.062, "9985a8ba6197ea7c02adc99c4c3aafc2a9d1cfa13e535ede64908ebea327a30c", "A", "billing feed + local MP4 atom probe"),
 ]
 
 GRAPHS = [
@@ -92,7 +94,8 @@ GRAPHS = [
     ("Demo: Dialogue (ChatterBox)", "workflows/comfy-cloud/as-built/demo-dialogue-chatterbox.json + cloud record", "843f8a61-e3a4-412e-b349-333fa827f290", 2, "archived; ran 1x", "A", None),
     ("fx-dub v2", "workflows/comfy-cloud/as-built/fx-dub-v2.json (editor) + .api.json + RESTORED cloud record", "65a063a5-9342-4297-8cfa-01313178fab9", 29, "archived + restored server-side; superseded by v2.1 order", "A", "Defects F1-F5. The original file 'fx-dub v2.json' was CLOBBERED by the agent's open_workflow (now holds a 19-node Motif dup) — restored copy lives at the workflow_id here."),
     ("Motif builds v2 (reference)", "readouts model-knowledge/workflows/audio/ace15-track-to-stems.json + cloud record", "78a76ecd-7ae2-452a-afea-ad55a8d290f8", 19, "measured reference — DO NOT MODIFY", "A", "The receipt-verified ACE 1.5 XL stack: UNETLoader+VAELoader+DualCLIPLoader(ace), ConditioningZeroOut negative, EmptyAceStep1.5LatentAudio."),
-    ("fx-dub v2.1", "not yet built — ordered in round-4 brief", None, None, "pending agent build (validate-only)", "B", "New tab; mirrors reference stack; F1-F6 fixes."),
+    ("fx-dub v2.1", "workflows/comfy-cloud/as-built/fx-dub-v2.1.json + cloud file 'fx-dub v2.1.json'", None, 33, "BUILT + wire-verified clean (F1-F6 all pass); never run; awaiting Director audition", "A", "XL split stack (UNET+VAE+DualCLIP type=ace), ConditioningZeroOut negative, EmptyAceStep1.5LatentAudio, VHS_SelectEveryNthImage(30) on the Florence branch only, mux reads full loader stream. Open drift: Florence task = detailed_caption (spec said more_detailed_caption); duration knob manual (no float-math node on the allowlist)."),
+    ("Ref: fx-dub v2 (mirror source)", "cloud throwaway tab", None, 29, "throwaway; safe to delete", "A", "The agent's read-only mirror tab — its open_workflow went here, not onto a live tab (standing rule honored)."),
 ]
 
 THREADS = [
@@ -100,7 +103,8 @@ THREADS = [
     (1, "inbound", "readouts dialogs 2026-08-21-fxdub-01-{transcript,verification}.md", "closed", "Director-run dialog: v1 build + 2 demos. Graphs pulled, demos verified from billing + headers."),
     (2, "outbound+reply", "…-02-{brief,reply,verification}.md", "closed", "v2 build order -> agent delivered 29-node v2; loader claim REFUTED Class A; 3 blockers found."),
     (3, "outbound+reply", "…-03-brief.md + 03-reply (clobber incident)", "closed", "v2.1 fix order -> agent clobbered the v2 tab via open_workflow mid-execution; stopped and asked before proceeding."),
-    (4, "outbound", "…-04-brief.md", "awaiting agent reply", "GO for v2.1 in a NEW tab; v2 restored server-side at 65a063a5…; open_workflow new-tab rule codified."),
+    (4, "outbound+reply", "…-04-{brief,reply,verification}.md", "closed", "GO for v2.1 -> agent built it (33 nodes, validate-only honored, open_workflow used only into a throwaway tab). Verified clean our side: F1-F6 all genuinely fixed."),
+    (5, "outbound", "…-05-brief.md", "awaiting agent reply", "Audition prep: 2 drift items (Florence task, VideoCombine widget claim), the audition-input question (clip lives in outputs, loader reads inputs), and the mvhd-timescale/source_fps risk."),
 ]
 
 TRAPS = [
@@ -119,6 +123,10 @@ TRAPS = [
     ("Pinned-seed byte-identity is memo-cache-only; a fresh re-execution reproduces the sound, not the bytes. Treat downloaded masters as canonical-by-hash.", "medium", "A"),
     ("The account-wide queue caps at 100 jobs — serialize batch submission (readouts trap ledger, measured on the library burn).", "medium", "A"),
     ("Turbo checkpoints need the turbo template's sampler (~8 steps/cfg 1) — running the XL recipe (50/cfg 6) on a turbo AIO overbakes at ~6x cost.", "medium", "B"),
+    ("Video generation dwarfs the whole audio pipeline: one 10 s Wan t2v clip cost 511.7 gpu-sec (~136 cr) vs ~10 cr for a full fx-dub audio run. Never generate test footage casually — reuse the archived audition clip.", "high", "A"),
+    ("The Wan-generated audition clip's mvhd movie timescale is 0 (malformed movie header; the per-track mdhd is correct at 16384/164864 = 10.062 s). VHS_VideoInfo.source_fps feeds VHS_VideoCombine.frame_rate — if fps derivation reads the movie header it may emit 0/NaN and produce a broken dub. VERIFY source_fps == 16.0 at the audition run before trusting the mux.", "high", "A"),
+    ("An agent reporting 'this node has no X widget in its schema' can be wrong — the pulled graph JSON is the arbiter. v2.1's VHS_VideoCombine DOES carry pix_fmt/crf/save_metadata/trim_to_audio (verified in widgets_values), despite the agent reporting them absent.", "medium", "A"),
+    ("Unrequested spec drift hides inside a correct-looking fix list: v2.1 silently changed the Florence task from more_detailed_caption to detailed_caption while reporting the Florence block 'carried over'. Diff widget values, not just topology.", "medium", "A"),
 ]
 
 DECISIONS = [
@@ -136,9 +144,8 @@ DECISIONS = [
 ]
 
 NEXT_ACTIONS = [
-    ("Relay round-4 brief to the Comfy Agent (GO for v2.1 new-tab build)", "Director", "open"),
-    ("Pull + wire-verify 'fx-dub v2.1' when the agent reports it built", "advisor session", "open"),
-    ("Director auditions v2.1 config -> order the first pinned-seed run (~10-15 cr); decode mix FLAC header (rate ground truth) + read LUFS manifests", "Director + advisor", "open"),
+    ("Relay round-5 brief (audition prep: 2 drift fixes + input-path question + source_fps risk)", "Director", "open"),
+    ("Director auditions v2.1 config -> order the first pinned-seed run on the archived clip (~10-15 cr); then: decode mix FLAC header (SETTLES the mix-bus sample-rate question), read both LUFS manifests, confirm source_fps==16.0 and the dub plays with audio", "Director + advisor", "open"),
     ("Fold ChatterBox/ACE-1.0 measurements into the next readouts model-knowledge wave", "advisor session", "open"),
     ("Host-side rewrite runner (Ollama, deterministic, cached) — dispatch decision D", "future session", "open"),
     ("Spot-effects event timeline (host-side shot/onset detection -> AudioPad placements)", "future session", "open"),
@@ -147,9 +154,14 @@ NEXT_ACTIONS = [
 ]
 
 def main():
-    if os.path.exists(DB):
-        os.remove(DB)
+    # Drop-and-recreate in place rather than deleting the file: on Windows an open
+    # reader (a test, a DB browser) holds a lock and os.remove raises WinError 32.
     c = sqlite3.connect(DB)
+    for kind, name in c.execute(
+        "SELECT type, name FROM sqlite_master WHERE type IN ('view','table') AND name NOT LIKE 'sqlite_%'"
+    ).fetchall():
+        c.execute("DROP {0} IF EXISTS \"{1}\"".format("VIEW" if kind == "view" else "TABLE", name))
+    c.commit()
     c.executescript("""
     CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT);
     CREATE TABLE nodes(name TEXT PRIMARY KEY, pack TEXT, status TEXT, class TEXT, notes TEXT);

@@ -6,7 +6,9 @@
 
 **Give any video its soundtrack: describe → generate → mix → re-mux.**
 
-fx-dub is a ComfyUI-native pipeline that takes a video clip, describes what's on screen (Florence-2), turns that description into *audio* prompts, generates an ambience/SFX bed (ACE-Step 1.5) and spoken dialogue (Chatterbox), mixes them to an evidence-based loudness target, and muxes the result back onto your video — with stems, a caption/prompt trail, and a loudness+provenance manifest beside every output.
+fx-dub is a ComfyUI-native pipeline that takes a video clip, describes what's on screen (Florence-2), turns that description into *audio* prompts, generates an ambience/SFX bed (ACE-Step 1.5) and spoken dialogue (Chatterbox), mixes them to an evidence-based loudness target, and re-muxes the result back onto your video — with stems, a caption/prompt trail, and a loudness+provenance manifest beside every output.
+
+> **"Re-mux"** = re-multiplex: the finished soundtrack is written back into the video container, pixels untouched. Not a typo for "remix" — the mixing happens one stage earlier; this is the step that hands you a playable `dubbed.mp4` instead of a bare audio file.
 
 **The publishable lane is MIT end-to-end**: Florence-2 (MIT) → ACE-Step 1.5 (MIT code+weights) → Chatterbox (MIT, Perth-watermarked) → Demucs-class tooling (MIT). Runs on a local GPU or on [Comfy Cloud](https://cloud.comfy.org) — cloud unit costs below are measured on-account, not estimated. Every alternative — cloud/local, permissive/conditional/paid — is mapped honestly in the **[Knowledge Base](docs/knowledge-base.md)**.
 

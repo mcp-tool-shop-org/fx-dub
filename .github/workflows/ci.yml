@@ -1,0 +1,35 @@
+name: ci
+
+on:
+  push:
+    paths:
+      - 'kb/**'
+      - 'workflows/**'
+      - 'tests/**'
+      - 'docs/assets/**'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'kb/**'
+      - 'workflows/**'
+      - 'tests/**'
+      - 'docs/assets/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test deps
+        run: pip install pillow
+      - name: Run test suite
+        run: python -m unittest discover -s tests -v
