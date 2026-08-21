@@ -40,8 +40,10 @@ Rows carry `class` **A** (measured on-account: billing feed, API pulls, decoded 
 ## Where things stand (2026-08-21 end of session 1)
 
 - **Design:** locked and verified (dispatch + Ed25519 citation receipt in `docs/design/`).
-- **Graphs:** the agent's v1 + v2 are archived with defect ledgers. v2's cloud file got clobbered by the agent's `open_workflow`; we restored it from our archive to workflow record **`65a063a5-9342-4297-8cfa-01313178fab9`**. The measured ACE reference stack is record **`78a76ecd-7ae2-452a-afea-ad55a8d290f8`** ("Motif builds v2") — read-only.
-- **Live thread:** round-4 brief (GO for "fx-dub v2.1" in a new tab; fixes F1–F6) awaits the Director's relay; then pull + verify + Director's audition run (~10–15 cr) which also closes the open mix-bus sample-rate question.
+- **Graphs:** v1, v2, and **v2.1** are archived. **v2.1 (33 nodes) is the first clean build** — F1–F6 all verified from the pulled JSON, and it trips zero detectors in the test suite. It has never been run. v2's cloud file was clobbered by the agent's `open_workflow` and restored from our archive to record **`65a063a5-9342-4297-8cfa-01313178fab9`**; the measured ACE reference stack is record **`78a76ecd-7ae2-452a-afea-ad55a8d290f8`** ("Motif builds v2") — read-only.
+- **Tests:** 77 passing, CI green. `tests/graph_lint.py` is the executable trap ledger.
+- **Live thread:** round-5 brief awaits relay — two drift corrections plus the audition blockers (the test clip lives in outputs while the loader reads inputs; the clip's `mvhd` timescale is 0, so `source_fps` must be checked before the mux trusts it).
+- **Audition fixture:** the Wan rain/cyborg clip — 161 frames, 10.062 s, ~16 fps, silent, `sha256 9985a8ba…`. **Do not regenerate test footage**: those two video jobs cost ~180 credits versus ~10–15 for a whole audio run.
 - **Not started:** host-side rewrite runner (decision D), spot-effects timeline, local-lane graphs, npm reservation.
 
 ## Cost intuition (measured)

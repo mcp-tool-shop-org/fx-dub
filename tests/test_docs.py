@@ -50,10 +50,16 @@ class ContractFilePresenceTests(unittest.TestCase):
             "AGENTS.md no longer names kb/fxdub.db — step 2 of the reading order is broken")
 
     def test_agents_md_points_at_the_dispatch_and_the_graph_archive(self):
+        """Steps 3 and 4 of the reading order must still be reachable from AGENTS.md.
+
+        Matched on the distinctive path fragment rather than a whole markdown
+        link, so re-formatting a link does not fail this — only dropping the
+        reference does.
+        """
         text = _read(AGENTS_MD)
         for reference in (
-            "docs/design/2026-08-21-fxdub-v1.dispatch.md",
-            "workflows/comfy-cloud/as-built/README.md",
+            "2026-08-21-fxdub-v1.dispatch.md",
+            "workflows/comfy-cloud/as-built",
         ):
             with self.subTest(reference=reference):
                 self.assertIn(reference, text)
