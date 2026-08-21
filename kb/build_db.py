@@ -152,6 +152,7 @@ DECISIONS = [
 NEXT_ACTIONS = [
     ("Upload C:/Users/mikey/Downloads/fxdub-audition-clip.mp4 (sha256 9985a8ba…) into Comfy Cloud inputs via the BROWSER upload control on the VHS_LoadVideo node — no API path exists. VERIFIED NOT DONE 2026-08-21 (loader COMBO = ['bedroom.mp4'])", "Director", "open"),
     ("After upload: read the filename from VHS_LoadVideo's video COMBO (get_node), relay round-7 brief + that bare filename, then one full pull verifying BOTH the filename and that the 16.0 primitive lands on frame_rate with the old source_fps link gone", "advisor session", "open"),
+    ("After the audition run: download all 7 artifacts to one dir and run `python tools/audition_receipt.py <dir> --json receipt.json`; commit the receipt; fold the measured mix sample rate into the KB (settles the open mix-bus question) and into the next readouts wave", "advisor session", "open"),
     ("Director auditions v2.1 config -> order the first pinned-seed run on the archived clip (~10-15 cr); then: decode mix FLAC header (SETTLES the mix-bus sample-rate question), read both LUFS manifests, confirm source_fps==16.0 and the dub plays with audio", "Director + advisor", "open"),
     ("Fold ChatterBox/ACE-1.0 measurements into the next readouts model-knowledge wave", "advisor session", "open"),
     ("Host-side rewrite runner (Ollama, deterministic, cached) — dispatch decision D", "future session", "open"),
