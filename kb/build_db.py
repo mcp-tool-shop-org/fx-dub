@@ -104,7 +104,8 @@ THREADS = [
     (2, "outbound+reply", "…-02-{brief,reply,verification}.md", "closed", "v2 build order -> agent delivered 29-node v2; loader claim REFUTED Class A; 3 blockers found."),
     (3, "outbound+reply", "…-03-brief.md + 03-reply (clobber incident)", "closed", "v2.1 fix order -> agent clobbered the v2 tab via open_workflow mid-execution; stopped and asked before proceeding."),
     (4, "outbound+reply", "…-04-{brief,reply,verification}.md", "closed", "GO for v2.1 -> agent built it (33 nodes, validate-only honored, open_workflow used only into a throwaway tab). Verified clean our side: F1-F6 all genuinely fixed."),
-    (5, "outbound", "…-05-brief.md", "awaiting agent reply", "Audition prep: 2 drift items (Florence task, VideoCombine widget claim), the audition-input question (clip lives in outputs, loader reads inputs), and the mvhd-timescale/source_fps risk."),
+    (5, "outbound+reply", "…-05-brief.md + reply", "closed", "2 drift items + audition blockers raised. Agent fixed the Florence task, answered Q1 (no outputs->inputs path exists) and Q2 (ffprobe reads a clean 16/1 from the track; could not see the movie header; recommended pinning frame_rate) — honest about what it could not verify."),
+    (6, "outbound", "…-06-brief.md", "awaiting agent reply", "GO on pinning frame_rate to PrimitiveFloat 16.0 (fixture-specific, documented); Q1 boundary confirmed from our side too (MCP upload_file is image-only) so the Director uploads via browser; asset-library remux declined on cost; filename to be sent after upload."),
 ]
 
 TRAPS = [
@@ -127,6 +128,8 @@ TRAPS = [
     ("The Wan-generated audition clip's mvhd movie timescale is 0 (malformed movie header; the per-track mdhd is correct at 16384/164864 = 10.062 s). VHS_VideoInfo.source_fps feeds VHS_VideoCombine.frame_rate — if fps derivation reads the movie header it may emit 0/NaN and produce a broken dub. VERIFY source_fps == 16.0 at the audition run before trusting the mux.", "high", "A"),
     ("An agent reporting 'this node has no X widget in its schema' can be wrong — the pulled graph JSON is the arbiter. v2.1's VHS_VideoCombine DOES carry pix_fmt/crf/save_metadata/trim_to_audio (verified in widgets_values), despite the agent reporting them absent.", "medium", "A"),
     ("Unrequested spec drift hides inside a correct-looking fix list: v2.1 silently changed the Florence task from more_detailed_caption to detailed_caption while reporting the Florence block 'carried over'. Diff widget values, not just topology.", "medium", "A"),
+    ("There is NO video-into-inputs path over the API, in either toolset: the MCP's upload_file is image-only (.jpg/.jpeg/.png/.webp/.gif; an .mp4 is rejected validation.input) and the in-app agent has no route that writes to the inputs namespace. Video fixtures MUST be uploaded through the Comfy Cloud browser UI.", "high", "A"),
+    ("Two probes reading DIFFERENT fields of the same file are not a contradiction: ffprobe reported a clean 16/1 from the TRACK while our atom probe found mvhd (MOVIE header) timescale 0. Both true. When a derived value could read either field, pin a primitive rather than betting on which one the node uses.", "medium", "A"),
 ]
 
 DECISIONS = [
@@ -144,7 +147,8 @@ DECISIONS = [
 ]
 
 NEXT_ACTIONS = [
-    ("Relay round-5 brief (audition prep: 2 drift fixes + input-path question + source_fps risk)", "Director", "open"),
+    ("Relay round-6 brief (GO on the frame_rate pin; upload handled our side)", "Director", "open"),
+    ("Upload C:/Users/mikey/Downloads/fxdub-audition-clip.mp4 (sha256 9985a8ba…) into Comfy Cloud inputs via the BROWSER (no API path exists), then send the agent the exact filename as it appears in the loader list", "Director", "open"),
     ("Director auditions v2.1 config -> order the first pinned-seed run on the archived clip (~10-15 cr); then: decode mix FLAC header (SETTLES the mix-bus sample-rate question), read both LUFS manifests, confirm source_fps==16.0 and the dub plays with audio", "Director + advisor", "open"),
     ("Fold ChatterBox/ACE-1.0 measurements into the next readouts model-knowledge wave", "advisor session", "open"),
     ("Host-side rewrite runner (Ollama, deterministic, cached) — dispatch decision D", "future session", "open"),
