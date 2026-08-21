@@ -1,0 +1,159 @@
+{
+  "schema": "roleos-citation-receipt/v1",
+  "kind": "citation-verification",
+  "tool": "roleos verify-citations",
+  "input": "docs/design/2026-08-21-fxdub-v1.dispatch.md",
+  "verdict": "escalate",
+  "blocking": false,
+  "advisory": true,
+  "citations_sha256": "cf7668438e179e4ae57b4472722f1f9820bbd750c331f6bcfa8adffe43823b85",
+  "prism_receipt": {
+    "id": "prism-01m0k6mbv7sh918mhja9bxpszt",
+    "signature": "4235b301893fd8530b3cab0b3c412227e79b9fdcf316df18d80a40b07b0196422e3f3b7a223dfd08348213609014944c938f49fc6c5393a259cfece20448c709",
+    "verdict": "escalate"
+  },
+  "retrieval_pins": [
+    {
+      "id": "c1",
+      "identifier": "arXiv:2407.05551",
+      "query": "https://export.arxiv.org/api/query?id_list=2407.05551",
+      "source_sha256": "081645931a182fbbe483e3188b99373be7d510484248e9c6199e988ad7eb2d57",
+      "existence": "resolved"
+    },
+    {
+      "id": "c2",
+      "identifier": "arXiv:2412.15322",
+      "query": "https://export.arxiv.org/api/query?id_list=2412.15322",
+      "source_sha256": "782af20880b0ced195ec9b89cb7fb4c2151739dd45f3ada4c66dfaf78ecf8d27",
+      "existence": "resolved"
+    },
+    {
+      "id": "c3",
+      "identifier": "arXiv:2602.20981",
+      "query": "https://export.arxiv.org/api/query?id_list=2602.20981",
+      "source_sha256": "e07b08a10a2d8641b24107f76f73b0db9712e5230a3bff10140be03d26455c8f",
+      "existence": "resolved"
+    },
+    {
+      "id": "c4",
+      "identifier": "arXiv:2409.09823",
+      "query": "https://export.arxiv.org/api/query?id_list=2409.09823",
+      "source_sha256": "3d8c590a25f8a4b6f7a9f96d8b5f4e81a8866b353e1a283df9af9163c72dbd35",
+      "existence": "resolved"
+    },
+    {
+      "id": "c5",
+      "identifier": "arXiv:2507.08557",
+      "query": "https://export.arxiv.org/api/query?id_list=2507.08557",
+      "source_sha256": "8d236fcbb56e92cb89df54f22381e072494e46767b56a60d0ff4aadb93bf3f16",
+      "existence": "resolved"
+    },
+    {
+      "id": "c6",
+      "identifier": "arXiv:2506.20995",
+      "query": "https://export.arxiv.org/api/query?id_list=2506.20995",
+      "source_sha256": "a03188ff6e0d4e839479854d2649767dd4aec0494f2b9ae9730620febb0a7b11",
+      "existence": "resolved"
+    },
+    {
+      "id": "c7",
+      "identifier": "arXiv:2407.01494",
+      "query": "https://export.arxiv.org/api/query?id_list=2407.01494",
+      "source_sha256": "57e1dd6258ca6b5ec768435f079fe2bd7b7659107ef79ba0214bba54b4b3668b",
+      "existence": "resolved"
+    },
+    {
+      "id": "c8",
+      "identifier": "arXiv:2311.00897",
+      "query": "https://export.arxiv.org/api/query?id_list=2311.00897",
+      "source_sha256": "460b541dffe9181d681bf629a229735cf463a65a17f7a32b9b277e2ed527f157",
+      "existence": "resolved"
+    },
+    {
+      "id": "c9",
+      "identifier": "arXiv:2311.00895",
+      "query": "https://export.arxiv.org/api/query?id_list=2311.00895",
+      "source_sha256": "fee73713abfc170a29e29ed309e905e9bfd86049d931f4e8b44c4779678ba043",
+      "existence": "resolved"
+    },
+    {
+      "id": "c10",
+      "identifier": "arXiv:2407.04416",
+      "query": "https://export.arxiv.org/api/query?id_list=2407.04416",
+      "source_sha256": "60ac527c392ffe10e655e3e6e52a33aa89a28ac011e7a6f0618f4f37bd46aced",
+      "existence": "resolved"
+    },
+    {
+      "id": "c11",
+      "identifier": "arXiv:2411.05679",
+      "query": "https://export.arxiv.org/api/query?id_list=2411.05679",
+      "source_sha256": "4d4628c09e80f95f3e301b83ae4004a09502b2b1dd337cd89918217a625fc7b0",
+      "existence": "resolved"
+    },
+    {
+      "id": "c12",
+      "identifier": "arXiv:2401.04394",
+      "query": "https://export.arxiv.org/api/query?id_list=2401.04394",
+      "source_sha256": "94a9811caac7dd12cccd4ee47e5428102d5432748d5c2991d1975d21bf95ea98",
+      "existence": "resolved"
+    },
+    {
+      "id": "c13",
+      "identifier": "arXiv:2211.06687",
+      "query": "https://export.arxiv.org/api/query?id_list=2211.06687",
+      "source_sha256": "fb48a409eb5595dbf9a62fc7acb030ec4514f4af1c200d1b739c82146000e775",
+      "existence": "resolved"
+    },
+    {
+      "id": "c14",
+      "identifier": "arXiv:2603.13824",
+      "query": "https://export.arxiv.org/api/query?id_list=2603.13824",
+      "source_sha256": "6b2d8b4ccaaab7d098d5c47c2b8308f4f65990daf15dbdc0249c98a3b3302601",
+      "existence": "resolved"
+    },
+    {
+      "id": "c15",
+      "identifier": "arXiv:2510.24024",
+      "query": "https://export.arxiv.org/api/query?id_list=2510.24024",
+      "source_sha256": "60c8a25e437ecab0507979c66bde0b900563a4d566186a3d4a562d77b6cb9d9b",
+      "existence": "resolved"
+    },
+    {
+      "id": "c16",
+      "identifier": "arXiv:2410.13720",
+      "query": "https://export.arxiv.org/api/query?id_list=2410.13720",
+      "source_sha256": "d4b9267898651095f79b52c6ca4d83fc7f18761b7e0716a6440baaba89a9fdb2",
+      "existence": "resolved"
+    },
+    {
+      "id": "c17",
+      "identifier": "arXiv:2401.17264",
+      "query": "https://export.arxiv.org/api/query?id_list=2401.17264",
+      "source_sha256": "240087335df8814186f03d0d181b05561b682574cd68e0a07ae61786a97e819f",
+      "existence": "resolved"
+    },
+    {
+      "id": "c18",
+      "identifier": "arXiv:2405.17364",
+      "query": "https://export.arxiv.org/api/query?id_list=2405.17364",
+      "source_sha256": "d691b883c600c2cde9593d992259f454a08ea70a90305aea881d570539e25443",
+      "existence": "resolved"
+    },
+    {
+      "id": "c19",
+      "identifier": "arXiv:2305.19100",
+      "query": "https://export.arxiv.org/api/query?id_list=2305.19100",
+      "source_sha256": "1a3fc66e3db14d6317fafbd29bc02d4313e2044a98059a7a124d3234f73429a0",
+      "existence": "resolved"
+    },
+    {
+      "id": "c20",
+      "identifier": "arXiv:2512.02650",
+      "query": "https://export.arxiv.org/api/query?id_list=2512.02650",
+      "source_sha256": "cb8b86e0bcb78de43fd4893537df750c9051abb059db909c0457eaaaa424f26c",
+      "existence": "resolved"
+    }
+  ],
+  "local_panel": null,
+  "chain_sha256": "4c2fb42069464b35957df3e3cf7cb3e43ad3f3a0d8a3faf8d3e50f4ec3cf19ba"
+}

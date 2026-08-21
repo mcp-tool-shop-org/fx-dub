@@ -1,0 +1,12 @@
+# generated audio/video binaries stay out of git — hashes + receipts go in docs
+*.flac
+*.wav
+*.mp3
+*.mp4
+*.webm
+out/
+demos/
+node_modules/
+__pycache__/
+*.log
+.DS_Store
