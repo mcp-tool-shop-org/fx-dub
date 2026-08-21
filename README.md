@@ -1,4 +1,8 @@
-# fx-dub
+<p align="center">
+  <img src="docs/assets/logo.png" alt="fx-dub" width="820">
+</p>
+
+#
 
 **Give any video its soundtrack: describe → generate → mix → re-mux.**
 
