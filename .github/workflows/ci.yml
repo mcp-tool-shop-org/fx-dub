@@ -80,6 +80,10 @@ jobs:
       # A regression here would be silent and expensive: an accidental
       # `dependencies = ["requests"]` would give a package documented as having
       # no network egress the ability to make one. Assert the list stays empty.
+      # NOTE: this step uses tomllib (3.11+) and is safe only because this job
+      # pins 3.12. Do NOT move it into the `verify` matrix, which includes the
+      # 3.10 floor declared in requires-python — that exact mistake turned CI red
+      # once already, with 3.12 green and 3.10 red on a ModuleNotFoundError.
       - name: Runtime dependency list must stay empty
         run: |
           python - <<'PY'

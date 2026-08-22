@@ -158,11 +158,25 @@ class PackageVersionTests(unittest.TestCase):
     """
 
     def _pyproject_version(self):
-        import tomllib
+        """Read the version without a TOML parser.
+
+        ``tomllib`` is 3.11+, and this package declares ``requires-python
+        >=3.10`` — so importing it here would make the test suite itself
+        unrunnable on the floor version the package claims to support. That is
+        exactly what happened: 3.12 was green and 3.10 was red.
+
+        A regex over one literal line is enough, and it keeps the test honest on
+        every interpreter the package supports.
+        """
+        import re
         path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                             "pyproject.toml")
-        with open(path, "rb") as handle:
-            return tomllib.load(handle)["project"]["version"]
+        with open(path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                match = re.match(r'^version\s*=\s*"([^"]+)"', line)
+                if match:
+                    return match.group(1)
+        self.fail("no version line in pyproject.toml")
 
     def test_package_version_matches_pyproject(self):
         # tools/__init__.py is the package init; read the literal directly rather
