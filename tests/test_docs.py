@@ -22,7 +22,17 @@ AGENTS_MD = os.path.join(REPO_ROOT, "AGENTS.md")
 KB_README = os.path.join(REPO_ROOT, "kb", "README.md")
 DISPATCH = os.path.join(REPO_ROOT, "docs", "design", "2026-08-21-fxdub-v1.dispatch.md")
 DISPATCH_VERIFY = os.path.join(REPO_ROOT, "docs", "design", "2026-08-21-fxdub-v1.dispatch.verify.md")
-BRIEFS_GLOB = os.path.join(REPO_ROOT, "docs", "briefs", "*.md")
+BRIEFS_DIR = os.path.join(REPO_ROOT, "docs", "briefs")
+# Two kinds of document live here and they have OPPOSITE contracts.
+# A *-brief.md is outbound: the Director pastes it into the in-app agent thread by hand,
+# so line 1 must name its paste target (an unlabelled paste has already landed in the
+# wrong session once — see AGENTS.md rule 3).
+# A *-verification.md is advisor-side: our measured record of what the agent's reply
+# actually turned out to be. It must NEVER carry a paste target, because it must never
+# be pasted anywhere.
+BRIEFS_GLOB = os.path.join(BRIEFS_DIR, "*-brief.md")
+RECORDS_GLOB = os.path.join(BRIEFS_DIR, "*-verification.md")
+ALL_BRIEF_DOCS_GLOB = os.path.join(BRIEFS_DIR, "*.md")
 
 PASTE_TARGET_MARKER = "PASTE TARGET"
 
@@ -70,7 +80,43 @@ class BriefContractTests(unittest.TestCase):
         self.briefs = sorted(glob.glob(BRIEFS_GLOB))
 
     def test_briefs_exist(self):
-        self.assertTrue(self.briefs, "no briefs found at docs/briefs/*.md")
+        self.assertTrue(self.briefs, "no briefs found at docs/briefs/*-brief.md")
+
+    def test_every_doc_in_briefs_declares_which_kind_it_is(self):
+        """No unclassified file may sit in docs/briefs/ escaping both contracts.
+
+        Without this, the paste-target gate is trivially bypassed by naming a
+        file anything else — which is exactly how a *-verification.md landed
+        here unchecked and turned the suite red instead of the document.
+        """
+        classified = set(glob.glob(BRIEFS_GLOB)) | set(glob.glob(RECORDS_GLOB))
+        for path in sorted(glob.glob(ALL_BRIEF_DOCS_GLOB)):
+            with self.subTest(doc=os.path.basename(path)):
+                self.assertIn(
+                    path, classified,
+                    "{0} is neither a *-brief.md nor a *-verification.md, so no "
+                    "contract applies to it. Name it for what it is.".format(
+                        os.path.basename(path)))
+
+    def test_verification_records_never_name_a_paste_target(self):
+        """The inverse contract, so the distinction is enforced both ways.
+
+        A verification record is our measured account of what an agent reply
+        turned out to be — several of them say the agent was right and we were
+        wrong. Pasting one into the agent thread would feed our own reasoning
+        back to the party we are checking. It must never look pasteable.
+        """
+        records = sorted(glob.glob(RECORDS_GLOB))
+        self.assertTrue(records, "no verification records found — this gate is vacuous")
+        for path in records:
+            with self.subTest(record=os.path.basename(path)):
+                with open(path, "r", encoding="utf-8") as fh:
+                    head = fh.read(400)
+                self.assertNotIn(
+                    PASTE_TARGET_MARKER, head,
+                    "{0} names a paste target — verification records are "
+                    "advisor-side and must never be pasted.".format(
+                        os.path.basename(path)))
 
     def test_every_brief_names_its_paste_target_on_line_one(self):
         for path in self.briefs:
