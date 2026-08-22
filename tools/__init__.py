@@ -14,6 +14,6 @@ A take can pass the first and be unusable. That is not hypothetical: it is why
 the second one exists.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 __all__ = ["__version__"]

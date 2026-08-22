@@ -4,6 +4,41 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] — 2026-08-22
+
+### Fixed
+
+- **The round-11 dialog archive carried a false impossibility, unmarked.** The
+  in-app agent's reply answered *"DEFINITIVE: No. You cannot wire LoadAudio into
+  the ElevenLabs clone node"* and **recommended dropping voice cloning entirely**.
+  Cloning works — job `920dc2e0-e420-473a-9cb9-45b84b0fea65` completed, producing
+  48 kHz / 3.520 s of speech through that exact path, and the runtime slot is
+  `files.audio0`.
+
+  The reply had never been archived at all; only the outbound brief had. It is now
+  written to the record with a correction banner, paired with a verification that
+  refutes it from measurement, and the studio thread table carries both rounds.
+  Preserved rather than deleted: the archive is the record, and removing a wrong
+  answer destroys the evidence of how it was wrong.
+
+  Left unmarked, the next session to read it would have dropped a working route.
+
+- The docs contract only modelled `*-brief.md` and `*-verification.md`, so an
+  inbound agent reply was an unclassified file escaping every check. `*-reply.md`
+  is now a first-class kind with its own rules: it must never name a paste target,
+  and **it may never be archived without a paired verification** — an unpaired
+  reply reads as fact.
+
+### Added
+
+- Release artifacts (`.whl` + `.tar.gz`) are now attached to the GitHub Release,
+  after a successful PyPI upload. PyPI remains the distribution channel; these
+  make the Release page self-contained for anyone auditing what a tag produced.
+- A test asserting `tools/__init__.py`'s `__version__` matches `pyproject.toml`.
+  `release.yml` already failed a publish on a tag mismatch, but nothing caught the
+  two files disagreeing with each other — a drifted `__version__` ships silently
+  and then misreports itself at runtime.
+
 ## [1.0.0] — 2026-08-22
 
 First stable release. The pipeline delivers a finished dub, and the verification

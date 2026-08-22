@@ -30,8 +30,15 @@ BRIEFS_DIR = os.path.join(REPO_ROOT, "docs", "briefs")
 # A *-verification.md is advisor-side: our measured record of what the agent's reply
 # actually turned out to be. It must NEVER carry a paste target, because it must never
 # be pasted anywhere.
+# A *-reply.md is INBOUND: the in-app agent's own words, preserved as testimony.
+# It must never carry a paste target either -- relaying an agent's reply back to it is
+# meaningless -- and, because a reply can be WRONG and has been, it must be readable
+# as testimony rather than as instruction. Round 11's reply recommended dropping voice
+# cloning entirely; cloning works, and a future session finding that file unmarked
+# would delete a working route.
 BRIEFS_GLOB = os.path.join(BRIEFS_DIR, "*-brief.md")
 RECORDS_GLOB = os.path.join(BRIEFS_DIR, "*-verification.md")
+REPLIES_GLOB = os.path.join(BRIEFS_DIR, "*-reply.md")
 ALL_BRIEF_DOCS_GLOB = os.path.join(BRIEFS_DIR, "*.md")
 
 PASTE_TARGET_MARKER = "PASTE TARGET"
@@ -89,13 +96,45 @@ class BriefContractTests(unittest.TestCase):
         file anything else — which is exactly how a *-verification.md landed
         here unchecked and turned the suite red instead of the document.
         """
-        classified = set(glob.glob(BRIEFS_GLOB)) | set(glob.glob(RECORDS_GLOB))
+        classified = (set(glob.glob(BRIEFS_GLOB))
+                      | set(glob.glob(RECORDS_GLOB))
+                      | set(glob.glob(REPLIES_GLOB)))
         for path in sorted(glob.glob(ALL_BRIEF_DOCS_GLOB)):
             with self.subTest(doc=os.path.basename(path)):
                 self.assertIn(
                     path, classified,
-                    "{0} is neither a *-brief.md nor a *-verification.md, so no "
-                    "contract applies to it. Name it for what it is.".format(
+                    "{0} is not a *-brief.md, *-verification.md or *-reply.md, so "
+                    "no contract applies to it. Name it for what it is.".format(
+                        os.path.basename(path)))
+
+    def test_agent_replies_never_name_a_paste_target(self):
+        """An inbound reply is testimony, not something to relay.
+
+        Pasting an agent's own reply back into its thread is meaningless, and a
+        paste-target header would invite exactly that.
+        """
+        for path in sorted(glob.glob(REPLIES_GLOB)):
+            with self.subTest(doc=os.path.basename(path)):
+                head = _read(path).lstrip().splitlines()[:3]
+                self.assertNotIn(
+                    PASTE_TARGET_MARKER, "\n".join(head),
+                    "{0} is an agent reply and must not name a paste target.".format(
+                        os.path.basename(path)))
+
+    def test_every_agent_reply_is_paired_with_a_verification(self):
+        """A reply archived without our measured account of it is a trap.
+
+        Round 11's reply stated a false impossibility and recommended dropping a
+        working capability. Unpaired, it reads as fact. The verification record
+        is what makes it readable as testimony.
+        """
+        for path in sorted(glob.glob(REPLIES_GLOB)):
+            with self.subTest(doc=os.path.basename(path)):
+                expected = path.replace("-reply.md", "-verification.md")
+                self.assertTrue(
+                    os.path.exists(expected),
+                    "{0} has no matching -verification.md. An agent reply must "
+                    "never be archived without our measured account of it.".format(
                         os.path.basename(path)))
 
     def test_verification_records_never_name_a_paste_target(self):

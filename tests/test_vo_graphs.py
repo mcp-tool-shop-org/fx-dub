@@ -151,5 +151,36 @@ class GapClosingTests(unittest.TestCase):
             vo_graphs.gap_closing_spans(self.WORDS, after_index=len(self.WORDS) - 1)
 
 
+class PackageVersionTests(unittest.TestCase):
+    """The version lives in two files; release.yml fails a publish on a tag
+    mismatch, but nothing previously caught the two files disagreeing with each
+    other. A drifted __version__ ships silently and misreports itself at runtime.
+    """
+
+    def _pyproject_version(self):
+        import tomllib
+        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            "pyproject.toml")
+        with open(path, "rb") as handle:
+            return tomllib.load(handle)["project"]["version"]
+
+    def test_package_version_matches_pyproject(self):
+        # tools/__init__.py is the package init; read the literal directly rather
+        # than importing it under a name that only exists post-build.
+        init = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            "tools", "__init__.py")
+        ns = {}
+        with open(init, "r", encoding="utf-8") as handle:
+            for line in handle:
+                if line.startswith("__version__"):
+                    exec(line, ns)  # noqa: S102 - reading our own literal
+                    break
+        self.assertEqual(ns.get("__version__"), self._pyproject_version())
+
+    def test_version_is_pep440_release(self):
+        import re
+        self.assertRegex(self._pyproject_version(), r"^\d+\.\d+\.\d+$")
+
+
 if __name__ == "__main__":
     unittest.main()

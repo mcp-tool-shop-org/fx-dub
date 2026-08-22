@@ -74,7 +74,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: release
     permissions:
-      id-token: write
+      id-token: write   # mint the short-lived PyPI token
+      contents: write   # attach the built artifacts to the Release
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -83,3 +84,17 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+      # Attach the SAME artifacts that just went to the index. PyPI remains the
+      # distribution channel; these exist so the Release page is self-contained
+      # for anyone auditing what a given tag actually produced, without having
+      # to trust that the index still serves the original files.
+      #
+      # This runs AFTER the publish on purpose: if PyPI rejects the upload, the
+      # Release should not carry artifacts implying a version that was never
+      # published.
+      - name: Attach artifacts to the GitHub Release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${GITHUB_REF_NAME}" dist/* --repo "${GITHUB_REPOSITORY}" --clobber
