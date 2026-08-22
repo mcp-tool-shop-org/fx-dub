@@ -164,6 +164,15 @@ class RedGateTests(unittest.TestCase):
         v = self._run(omit=("bed_lufs",))
         self.assertFalse(v["loudness:dialogue_anchored"])
 
+    def test_vo_stem_at_48k_from_elevenlabs_passes(self):
+        """ElevenLabs emits 48 kHz; a check that punishes the upgrade is broken."""
+        v = self._run(vo_rate=48000)
+        self.assertTrue(v["audio:stem_vo:native_rate"])
+
+    def test_vo_stem_at_a_rate_no_tts_produces_still_fails(self):
+        v = self._run(vo_rate=32000)
+        self.assertFalse(v["audio:stem_vo:native_rate"])
+
     def test_vo_stem_at_24k_is_not_a_failure(self):
         """Every cloud TTS decodes 24 kHz and no SRC node exists on the platform.
 

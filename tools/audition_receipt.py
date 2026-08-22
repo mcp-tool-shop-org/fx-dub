@@ -138,10 +138,19 @@ def check_run(run_dir: str, bed_gain_db: float = DEFAULT_BED_GAIN_DB) -> dict:
             # noise, not a gate. What actually matters is that the DELIVERED mix and
             # dub carry the runtime rate, which AudioMix does by taking audio_1's rate
             # -- so the bed occupies audio_1 and the VO is upsampled into the mix.
-            record("audio:{0}:native_rate".format(key), info["sample_rate"] in TTS_NATIVE_RATES,
-                   "{0} Hz, {1}ch, {2:.3f}s (source stem; cloud TTS is 24 kHz)".format(
+            # A source stem may arrive at the runtime rate OR at a TTS native rate.
+            # MEASURED 2026-08-22: the LOCAL engines (FL_ChatterboxTTS, both Qwen3-TTS
+            # nodes) all decode 24 kHz mono, but ElevenLabs eleven_v3 emits 48 kHz via
+            # `opus_48000_192` — which is strictly better, since it removes the rate
+            # mismatch at the source instead of relying on AudioMix's audio_1 rule.
+            # An earlier version of this check hardcoded 24 kHz and so went RED on the
+            # higher-quality path: a check that punishes an upgrade is a broken check.
+            ok = (info["sample_rate"] == RUNTIME_SAMPLE_RATE
+                  or info["sample_rate"] in TTS_NATIVE_RATES)
+            record("audio:{0}:native_rate".format(key), ok,
+                   "{0} Hz, {1}ch, {2:.3f}s (source stem; runtime 48k or TTS-native)".format(
                        info["sample_rate"], info["channels"], info["duration_s"]),
-                   "measured: all cloud TTS decodes 24 kHz mono; no SRC node exists")
+                   "measured: local cloud TTS is 24 kHz mono; ElevenLabs emits 48 kHz")
 
     delivered = {k: v for k, v in rates.items() if k in DELIVERED_AT_RUNTIME_RATE}
     if len(delivered) > 1:
