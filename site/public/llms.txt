@@ -1,0 +1,127 @@
+# fx-dub
+
+> Verify a generated dub before anyone hears it. Two receipts — one for the audio
+> container, one for what was actually said — for AI dialogue pipelines.
+> Python 3.10+, MIT, zero runtime dependencies, no network egress.
+
+fx-dub exists because a generated speech take can be flawless by every measurement
+a container exposes and still be unusable. `pip install fx-dub` gives you two
+command-line verifiers that exit non-zero when a take fails its contract.
+
+## The problem it solves
+
+A take can be 48 kHz stereo, exactly the right duration, and a textbook −18 LUFS,
+while also:
+
+- saying a line that was never in the script (reference-mode TTS models reproduce
+  their reference clip's *dialogue*, not just its timbre)
+- rendering two characters in one voice (pitch and delivery knobs are often
+  node-global, not per-speaker)
+- holding a multi-second silence mid-sentence that runs into the next cue
+
+None of those are visible to sample rate or duration. All are trivially visible to
+a word-level diarized transcript checked against an authored scene script.
+
+## Install and use
+
+```bash
+pip install fx-dub
+
+# what was actually said, against the scene contract
+fxdub-dialogue scene.json words.json --only-speaker VOICE
+
+# the container: masters, loudness, ducking depth, re-muxed video
+fxdub-receipt runs/my-run --bed-gain-db -12 --json receipt.json
+```
+
+Exit codes: `0` pass · `1` the audio failed its contract (read the receipt) ·
+`2` the tool could not run. Errors print `{code, message, hint}` on stderr.
+
+## Load-bearing invariants
+
+These are measured facts from production use, not preferences. An agent working
+on a dubbing pipeline should treat them as constraints:
+
+1. **Voice identity is not recoverable by re-running.** Prompt-designed voice
+   generation is non-deterministic *regardless of seed*. A voice a human approves
+   cannot be regenerated — re-running the same prompt returns a different person.
+   Cast once, keep the approved audio, then reference or splice it. Never
+   re-render an approved character.
+2. **Cross-engine voice cloning does not preserve identity.** A voice cloned from
+   one engine into another comes back approximated.
+3. **Gain-stage from the meter, never from remembered numbers.** Two TTS engines
+   measured 6.7 dB apart on the same line (−18.34 vs −25.03 LUFS). Reusing a
+   working recipe's fixed gain after an engine change buries the dialogue while
+   every container check stays green.
+4. **A per-character stem must be checked against only that character's lines.**
+   Checking it against the whole scene hides contamination, because the other
+   character's line is legitimately in the script.
+5. **A failing check is a finding, not a bug in the tool.** Never tune a threshold
+   to make it green.
+
+## Scene script format
+
+The contract. Direction lives here as data, not in a chat transcript:
+
+```json
+{
+  "clip_duration_s": 10.062,
+  "max_gap_within_line_s": 0.5,
+  "lines": [
+    { "speaker": "VOICE", "text": "Hey, how's it going?" },
+    { "speaker": "MAC",   "text": "Not bad. Can't complain.",
+      "max_gap_s": 0.15,
+      "direction": "There's no pause in between. A gap here runs into VOICE's next cue." }
+  ]
+}
+```
+
+Speaker names are case-sensitive. `max_gap_s` overrides the scene default for one
+line; `direction` records why that number is what it is.
+
+## Transcript format
+
+A JSON list of words, each `{text, start, end, speaker_id}` with `type: "word"`.
+Any diarizing ASR produces this. `fxdub.vo_graphs.transcribe()` builds the ComfyUI
+graph for one.
+
+## Python API
+
+- `fxdub.dialogue_receipt.check_dialogue(scene, words, only_speaker=None)` — the
+  content contract; returns `{"checks": [...], "measured": {...}}`
+- `fxdub.audition_receipt.check_run(run_dir, bed_gain_db)` — the container contract
+- `fxdub.media_probe` — FLAC `STREAMINFO` and MP4 atom parsing, standard library only
+- `fxdub.vo_graphs` — builders for ComfyUI VO-stage graphs. Pure functions to a
+  `dict`; **nothing in this package submits, uploads, or spends**
+
+## Docs
+
+- [Handbook](https://mcp-tool-shop-org.github.io/fx-dub/handbook/): install, usage, scene scripts, verification, graph builders, reference
+- [Getting started](https://mcp-tool-shop-org.github.io/fx-dub/handbook/getting-started/)
+- [Scene scripts](https://mcp-tool-shop-org.github.io/fx-dub/handbook/scene-scripts/)
+- [Verifying a run](https://mcp-tool-shop-org.github.io/fx-dub/handbook/verifying/)
+- [Graph builders](https://mcp-tool-shop-org.github.io/fx-dub/handbook/graph-builders/)
+- [Reference](https://mcp-tool-shop-org.github.io/fx-dub/handbook/reference/)
+
+## Repository
+
+- [Source](https://github.com/mcp-tool-shop-org/fx-dub) — MIT
+- [PyPI](https://pypi.org/project/fx-dub/)
+- `AGENTS.md` — the durable operating manual for agents working in the repo
+- `HANDOFF.md` — live session state
+- `kb/fxdub.db` — SQLite project database: nodes, models, measured runs, 65
+  recorded traps, decisions, open actions. Query
+  `SELECT * FROM traps ORDER BY severity;` before proposing pipeline changes.
+
+## Security posture
+
+No network calls of any kind. No telemetry. No credential access. Zero runtime
+dependencies, asserted by CI — a build fails if that list becomes non-empty. Media
+parsers are read-only, bounded, and return failed checks rather than raising on
+malformed input.
+
+## Not for
+
+Cloning a real person's voice without their consent. Synthetic speech published in
+the EU carries an Article 50 machine-readable-marking obligation; the receipt JSON
+is built to be part of that provenance trail but is not by itself compliance.

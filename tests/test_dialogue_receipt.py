@@ -215,3 +215,94 @@ class SceneScriptTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CliContractTests(unittest.TestCase):
+    """Exit codes and the structured error shape are part of the CLI contract.
+
+    A contract failure (1) and a tool failure (2) must stay distinguishable:
+    in CI the first wants its receipt read, the second means the invocation is
+    wrong. Errors carry code/message/hint and never a raw traceback.
+    """
+
+    def _run(self, argv):
+        import contextlib, io
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = dialogue_receipt.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.scene = os.path.join(self.tmp.name, "scene.json")
+        self.words = os.path.join(self.tmp.name, "words.json")
+        with open(self.scene, "w", encoding="utf-8") as fh:
+            json.dump(SCENE, fh)
+        with open(self.words, "w", encoding="utf-8") as fh:
+            json.dump(clean_transcript(), fh)
+
+    def test_clean_take_exits_zero(self):
+        code, _, _ = self._run([self.scene, self.words])
+        self.assertEqual(code, 0)
+
+    def test_contract_failure_exits_one(self):
+        bad = os.path.join(self.tmp.name, "bad.json")
+        a, end_a = say("Hey how's it going", 0.4, "speaker_0")
+        with open(bad, "w", encoding="utf-8") as fh:
+            json.dump([{"text": t, "start": s, "end": e, "speaker_id": k, "type": "word"}
+                       for t, s, e, k in a], fh)
+        code, _, _ = self._run([self.scene, bad])
+        self.assertEqual(code, 1)
+
+    def test_missing_scene_exits_two_with_structured_error(self):
+        code, _, err = self._run([os.path.join(self.tmp.name, "nope.json"), self.words])
+        self.assertEqual(code, 2)
+        payload = json.loads(err)["error"]
+        self.assertEqual(payload["code"], "scene_not_found")
+        self.assertTrue(payload["message"])
+        self.assertTrue(payload["hint"])
+
+    def test_missing_words_exits_two(self):
+        code, _, err = self._run([self.scene, os.path.join(self.tmp.name, "nope.json")])
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(err)["error"]["code"], "words_not_found")
+
+    def test_malformed_json_exits_two_without_a_traceback(self):
+        junk = os.path.join(self.tmp.name, "junk.json")
+        with open(junk, "w", encoding="utf-8") as fh:
+            fh.write("{not json")
+        code, _, err = self._run([junk, self.words])
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(err)["error"]["code"], "scene_malformed")
+        self.assertNotIn("Traceback", err)
+
+    def test_only_speaker_naming_nobody_is_a_runtime_error_not_a_pass(self):
+        """A misspelled --only-speaker must NOT pass vacuously.
+
+        An empty contract satisfies every check, which is the most dangerous
+        possible result: it renders as success.
+        """
+        code, _, err = self._run([self.scene, self.words, "--only-speaker", "NOBODY"])
+        self.assertEqual(code, 2)
+        payload = json.loads(err)["error"]
+        self.assertEqual(payload["code"], "unknown_speaker")
+        self.assertIn("MAC", payload["hint"])
+
+    def test_scene_with_no_lines_is_a_runtime_error(self):
+        empty = os.path.join(self.tmp.name, "empty.json")
+        with open(empty, "w", encoding="utf-8") as fh:
+            json.dump({"clip_duration_s": 10.0, "lines": []}, fh)
+        code, _, err = self._run([empty, self.words])
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(err)["error"]["code"], "empty_contract")
+
+    def test_only_speaker_is_case_sensitive(self):
+        code, _, err = self._run([self.scene, self.words, "--only-speaker", "mac"])
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(err)["error"]["code"], "unknown_speaker")
+
+    def test_debug_flag_re_raises(self):
+        with self.assertRaises(FileNotFoundError):
+            dialogue_receipt.main([os.path.join(self.tmp.name, "nope.json"),
+                                   self.words, "--debug"])

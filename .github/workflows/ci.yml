@@ -1,19 +1,29 @@
 name: ci
 
+# Paths-gated, per the org's Actions rules: CI minutes are finite and this repo
+# carries large run artifacts that must never trigger a build.
 on:
   push:
     paths:
+      - 'pyproject.toml'
+      - 'tools/**'
       - 'kb/**'
-      - 'workflows/**'
       - 'tests/**'
+      - 'workflows/**'
+      - 'docs/scenes/**'
       - 'docs/assets/**'
+      - 'verify.sh'
       - '.github/workflows/**'
   pull_request:
     paths:
+      - 'pyproject.toml'
+      - 'tools/**'
       - 'kb/**'
-      - 'workflows/**'
       - 'tests/**'
+      - 'workflows/**'
+      - 'docs/scenes/**'
       - 'docs/assets/**'
+      - 'verify.sh'
       - '.github/workflows/**'
   workflow_dispatch:
 
@@ -21,15 +31,63 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
-  test:
+  # One gate, two versions: the floor declared in requires-python and the
+  # current stable. Two entries, not a matrix sprawl.
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install tooling
+        run: python -m pip install --upgrade build pillow
+
+      # verify.sh IS the gate — test + build + install-smoke. CI runs exactly
+      # what a developer runs locally, so green here means green there.
+      - name: Verify
+        run: |
+          chmod +x verify.sh
+          ./verify.sh
+
+  # Dependency scanning. fx-dub ships ZERO runtime dependencies by design, so
+  # this audits the build/test toolchain — the only place a CVE could reach us.
+  audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install test deps
-        run: pip install pillow
-      - name: Run test suite
-        run: python -m unittest discover -s tests -v
+
+      - name: Install pip-audit
+        run: python -m pip install --upgrade pip-audit build
+
+      - name: Audit the build + test toolchain
+        run: pip-audit --strict --progress-spinner=off
+
+      # A regression here would be silent and expensive: an accidental
+      # `dependencies = ["requests"]` would give a package documented as having
+      # no network egress the ability to make one. Assert the list stays empty.
+      - name: Runtime dependency list must stay empty
+        run: |
+          python - <<'PY'
+          import tomllib, sys
+          deps = tomllib.load(open('pyproject.toml','rb'))['project'].get('dependencies', [])
+          if deps:
+              print(f"::error::fx-dub declares runtime dependencies: {deps}. "
+                    "SECURITY.md promises none. Update both, deliberately, or drop the dep.")
+              sys.exit(1)
+          print("runtime dependencies: none, as documented")
+          PY

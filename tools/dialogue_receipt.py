@@ -311,6 +311,22 @@ def render(result: dict) -> str:
     return head + "\n" + "\n".join(rows)
 
 
+#: Exit codes. 1 means "the audio failed its contract" — a finding, and the
+#: normal way this tool says no. 2 means the tool could not run at all. Keeping
+#: them distinct matters in CI: a 1 should fail the build loudly with a receipt
+#: to read, a 2 means the invocation itself is wrong.
+EXIT_OK = 0
+EXIT_CONTRACT_FAILED = 1
+EXIT_RUNTIME_ERROR = 2
+
+
+def _fail(code, message, hint):
+    """Emit the structured error shape and return the runtime exit code."""
+    payload = {"error": {"code": code, "message": message, "hint": hint}}
+    print(json.dumps(payload, indent=2), file=sys.stderr)
+    return EXIT_RUNTIME_ERROR
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("scene", help="authored scene JSON")
@@ -320,17 +336,67 @@ def main(argv=None) -> int:
                         help="check a per-character STEM: narrow the contract to this "
                              "character's lines, so any other speech in the stem fails "
                              "no_invented_speech")
+    parser.add_argument("--debug", action="store_true",
+                        help="re-raise on error instead of printing a structured message")
     args = parser.parse_args(argv)
 
-    with open(args.scene, "r", encoding="utf-8") as handle:
-        scene = json.load(handle)
-    result = check_dialogue(scene, load_words(args.words), only_speaker=args.only_speaker)
+    try:
+        with open(args.scene, "r", encoding="utf-8") as handle:
+            scene = json.load(handle)
+    except FileNotFoundError:
+        if args.debug:
+            raise
+        return _fail("scene_not_found", "No scene file at {0!r}.".format(args.scene),
+                     "Scenes live in docs/scenes/. Pass the path to the .json, not the scene name.")
+    except json.JSONDecodeError as exc:
+        if args.debug:
+            raise
+        return _fail("scene_malformed", "{0} is not valid JSON: {1}".format(args.scene, exc),
+                     "A scene needs a 'lines' array of {speaker, text} objects.")
+
+    try:
+        words = load_words(args.words)
+    except FileNotFoundError:
+        if args.debug:
+            raise
+        return _fail("words_not_found", "No transcript at {0!r}.".format(args.words),
+                     "Produce one with vo_graphs.transcribe() and save output slot 2 "
+                     "(the word list) via SaveText.")
+    except json.JSONDecodeError as exc:
+        if args.debug:
+            raise
+        return _fail("words_malformed", "{0} is not valid JSON: {1}".format(args.words, exc),
+                     "Expected the word-level transcript, not the plain-text slot 0.")
+
+    # A contract with no lines in it passes every check vacuously, which is the
+    # most dangerous possible result: it looks like success. Catch it here — a
+    # misspelled --only-speaker is a bad invocation, not a clean stem.
+    cast = [ln.get("speaker") for ln in (scene.get("lines") or [])]
+    if not cast:
+        return _fail("empty_contract", "{0} has no lines.".format(args.scene),
+                     "A scene needs a 'lines' array of {speaker, text} objects.")
+    if args.only_speaker is not None and args.only_speaker not in cast:
+        return _fail(
+            "unknown_speaker",
+            "No line in {0} is spoken by {1!r}.".format(args.scene, args.only_speaker),
+            "Cast in this scene: {0}. Speaker names are case-sensitive.".format(
+                ", ".join(sorted({c for c in cast if c}))),
+        )
+
+    result = check_dialogue(scene, words, only_speaker=args.only_speaker)
 
     print(render(result))
     if args.json_path:
-        with open(args.json_path, "w", encoding="utf-8") as handle:
-            json.dump(result, handle, indent=2)
-    return 0 if all(c["ok"] for c in result["checks"]) else 1
+        try:
+            with open(args.json_path, "w", encoding="utf-8") as handle:
+                json.dump(result, handle, indent=2)
+        except OSError as exc:
+            if args.debug:
+                raise
+            return _fail("receipt_unwritable",
+                         "Could not write the receipt to {0!r}: {1}".format(args.json_path, exc),
+                         "Check the directory exists and is writable.")
+    return EXIT_OK if all(c["ok"] for c in result["checks"]) else EXIT_CONTRACT_FAILED
 
 
 if __name__ == "__main__":

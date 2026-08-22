@@ -6,6 +6,29 @@ You are working on **fx-dub**: video → describe (Florence-2) → rewrite → g
 
 > **Continuing a session?** Read [`HANDOFF.md`](HANDOFF.md) — it carries the live state (what's blocked, what's next, what's approved). This file is the durable manual; that one is the current position.
 
+## fx-dub is now a published package
+
+`pip install fx-dub` — Python 3.10+, MIT, **zero runtime dependencies**, published
+to PyPI via Trusted Publishing (OIDC; workflow `release.yml`, environment
+`release`, no long-lived token anywhere). Two console scripts: `fxdub-receipt`
+(container) and `fxdub-dialogue` (content).
+
+The modules still live in `tools/` — `pyproject.toml` maps that directory onto the
+`fxdub` import name at build time, so `python tools/audition_receipt.py` keeps
+working in-repo exactly as this file describes while the wheel exposes
+`fxdub.audition_receipt`. **Do not move them.**
+
+**`./verify.sh` is the single gate**: test suite + wheel/sdist build + install the
+wheel into a throwaway venv and exercise it. CI runs exactly this, so green
+locally means green in CI. Run it before any push.
+
+Two invariants CI enforces that are easy to break by accident:
+- The runtime dependency list must stay **empty** — `SECURITY.md` and the landing
+  page both promise no network egress, and a single transitive dep could give the
+  lie to that. CI fails the build if `dependencies` becomes non-empty.
+- The version in `pyproject.toml` must equal the release tag; `release.yml` fails
+  the publish on a mismatch.
+
 ## Read in this order
 
 1. This file.

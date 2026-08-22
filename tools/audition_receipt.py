@@ -267,17 +267,36 @@ def main(argv=None) -> int:
                         default=DEFAULT_BED_GAIN_DB,
                         help="mix gain applied to the bed, in dB (the bed meter reads "
                              "the stem pre-gain, so ducking depth needs it)")
+    parser.add_argument("--debug", action="store_true",
+                        help="re-raise on error instead of printing a structured message")
     args = parser.parse_args(argv)
 
+    #: 1 = the run failed its contract (a finding, with a receipt to read).
+    #: 2 = the tool could not run. CI needs those distinguishable.
     if not os.path.isdir(args.run_dir):
-        print("no such directory: {0}".format(args.run_dir), file=sys.stderr)
+        print(json.dumps({"error": {
+            "code": "run_dir_not_found",
+            "message": "No run directory at {0!r}.".format(args.run_dir),
+            "hint": "Download the job's artifacts into one directory first; the tool "
+                    "matches them by filename_prefix stem (mix*.flac, stem_vo*.flac, ...).",
+        }}, indent=2), file=sys.stderr)
         return 2
 
     result = check_run(args.run_dir, bed_gain_db=args.bed_gain_db)
     print(render(result))
     if args.json_path:
-        with open(args.json_path, "w", encoding="utf-8") as handle:
-            json.dump(result, handle, indent=2)
+        try:
+            with open(args.json_path, "w", encoding="utf-8") as handle:
+                json.dump(result, handle, indent=2)
+        except OSError as exc:
+            if args.debug:
+                raise
+            print(json.dumps({"error": {
+                "code": "receipt_unwritable",
+                "message": "Could not write the receipt to {0!r}: {1}".format(args.json_path, exc),
+                "hint": "Check the directory exists and is writable.",
+            }}, indent=2), file=sys.stderr)
+            return 2
     return 0 if all(c["ok"] for c in result["checks"]) else 1
 
 

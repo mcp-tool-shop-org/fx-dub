@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fx-dub"
+version = "1.0.0"
+description = "Verify a generated dub before anyone hears it — container receipts and spoken-content receipts for AI dialogue pipelines."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "mcp-tool-shop", email = "64996768+mcp-tool-shop@users.noreply.github.com" }]
+keywords = [
+    "audio", "dubbing", "text-to-speech", "comfyui", "loudness", "ebu-r128",
+    "verification", "receipts", "diarization", "voice",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+    "Topic :: Software Development :: Quality Assurance",
+    "Typing :: Typed",
+]
+
+# Zero runtime dependencies, deliberately. Every check decodes bytes with the
+# standard library: FLAC STREAMINFO and MP4 atoms are parsed directly, so the
+# verifier runs anywhere Python does and cannot be broken by a transitive bump.
+dependencies = []
+
+[project.urls]
+Homepage = "https://mcp-tool-shop-org.github.io/fx-dub/"
+Handbook = "https://mcp-tool-shop-org.github.io/fx-dub/handbook/"
+Repository = "https://github.com/mcp-tool-shop-org/fx-dub"
+Changelog = "https://github.com/mcp-tool-shop-org/fx-dub/blob/main/CHANGELOG.md"
+Issues = "https://github.com/mcp-tool-shop-org/fx-dub/issues"
+
+[project.scripts]
+fxdub-receipt = "fxdub.audition_receipt:main"
+fxdub-dialogue = "fxdub.dialogue_receipt:main"
+
+# The shipped modules live in tools/ so that `python tools/<name>.py` keeps
+# working for in-repo development exactly as the docs describe. package-dir
+# maps that directory onto the `fxdub` import name at build time, so the wheel
+# exposes `fxdub.audition_receipt` without a file move that would invalidate
+# every path in AGENTS.md.
+[tool.setuptools]
+package-dir = { fxdub = "tools" }
+packages = ["fxdub"]
+
+[tool.setuptools.package-data]
+fxdub = ["py.typed"]

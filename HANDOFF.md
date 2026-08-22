@@ -59,6 +59,37 @@ the picture is 10.062 s, so there is room — re-render that one line with the w
 opened to ~10.0 s against the same reference to recover it. Director's call:
 *"Cuts him off at the end, but it's good enough."*
 
+## 2b. SHIPPED — fx-dub is a published package (full treatment, 2026-08-22)
+
+`pip install fx-dub` — v1.0.0, Python 3.10+, MIT, **zero runtime dependencies**,
+PyPI via Trusted Publishing (OIDC; workflow `release.yml`, environment `release`,
+no long-lived token exists anywhere).
+
+| Surface | State |
+|---|---|
+| Package | `fxdub` — 4 modules, 2 console scripts (`fxdub-receipt`, `fxdub-dialogue`), `py.typed` |
+| Gate | `./verify.sh` = tests + wheel/sdist build + install-smoke. CI runs exactly this on 3.10 and 3.12, plus `pip-audit --strict`. |
+| SHIP_GATE | Hard gates A-D all checked or explicitly SKIPped with reasoning; section E closed by the treatment. |
+| Landing page | `https://mcp-tool-shop-org.github.io/fx-dub/` |
+| Handbook | `/handbook/` — 6 Starlight pages (index, getting-started, scene-scripts, verifying, graph-builders, reference), pagefind search |
+| LLM entrance | `/llms.txt` — machine-readable summary with the load-bearing invariants |
+| Translations | 8 languages via polyglot-mcp on the local GPU |
+| repo-knowledge | thesis + architecture + 6 notes + 3 relationships; 6 docs indexed |
+| GitHub metadata | description, homepage, 10 topics |
+
+**The modules still live in `tools/`.** `pyproject.toml` maps that directory onto
+the `fxdub` import name at build time (`package-dir`), so every path in AGENTS.md
+still works and the wheel still exposes `fxdub.audition_receipt`. Do not move them.
+
+**Two CI-enforced invariants**, both easy to break by accident:
+- the runtime dependency list must stay **empty** (SECURITY.md and the landing
+  page both promise no network egress);
+- `pyproject.toml`'s version must equal the release tag, or `release.yml` fails
+  the publish.
+
+Note `pages.yml` is a third workflow file; per the full-treatment playbook it does
+not count against the org's two-workflow limit.
+
 ## 3. What the audition answers
 
 - **The open mix-bus sample rate.** Nobody can answer it without a run: there is no sample-rate-conversion node on the allowlist, `AudioStandardize` conforms channels only, and `AudioMix`'s rate-reconciliation policy is undocumented. The receipt decodes the FLAC headers and settles it. Fold the answer into `kb/build_db.py` **and** the next readouts `model-knowledge` wave.
