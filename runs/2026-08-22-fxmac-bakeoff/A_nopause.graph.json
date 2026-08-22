@@ -1,0 +1,55 @@
+{
+  "1": {
+    "class_type": "LoadAudio",
+    "inputs": {
+      "audio": "37d38cdaeb8d944d6f55bcc0082151d95949597c56d6fd20baae3a0027d0a4b9.flac"
+    }
+  },
+  "10": {
+    "class_type": "TrimAudioDuration",
+    "inputs": {
+      "audio": [
+        "1",
+        0
+      ],
+      "start_index": 0.319,
+      "duration": 0.66
+    }
+  },
+  "11": {
+    "class_type": "TrimAudioDuration",
+    "inputs": {
+      "audio": [
+        "1",
+        0
+      ],
+      "start_index": 2.719,
+      "duration": 0.84
+    }
+  },
+  "50": {
+    "class_type": "AudioConcat",
+    "inputs": {
+      "audio1": [
+        "10",
+        0
+      ],
+      "audio2": [
+        "11",
+        0
+      ],
+      "direction": "after"
+    }
+  },
+  "90": {
+    "class_type": "SaveAudioAdvanced",
+    "inputs": {
+      "audio": [
+        "50",
+        0
+      ],
+      "filename_prefix": "fxmac/A_nopause",
+      "format": "flac"
+    }
+  }
+}

@@ -2,7 +2,7 @@
 
 You are working on **fx-dub**: video → describe (Florence-2) → rewrite → generated ambience bed (ACE-Step 1.5) + authored dialogue (Chatterbox) → dialogue-anchored mix → stems + manifest → re-muxed `dubbed.mp4`. MIT publishable lane. This file is the ground-running entry for any agent session; it is updated at the end of every working session (that rule is part of the workflow — leave it better than you found it).
 
-**State snapshot: 2026-08-22, session 3 — the pipeline is DONE (19/19); the open problem is voice quality.**
+**State snapshot: 2026-08-22, session 4 — the DUB IS DELIVERED. v2.8 scores 19/19 with Director-approved voices, and the content verifier that was missing now exists.**
 
 > **Continuing a session?** Read [`HANDOFF.md`](HANDOFF.md) — it carries the live state (what's blocked, what's next, what's approved). This file is the durable manual; that one is the current position.
 
@@ -37,18 +37,31 @@ Rows carry `class` **A** (measured on-account: billing feed, API pulls, decoded 
 5. **Full UUIDs in receipts.** Truncated ids have caused real collisions studio-wide.
 6. **Archive every round** in the studio dialog folder: `E:/AI/readouts/model-knowledge/dialogs/comfy-agent/` (`YYYY-MM-DD-fxdub-NN-{brief,reply,verification}.md`) and update its thread table. Repo copies of briefs live in `docs/briefs/`.
 7. **Session end:** update this snapshot + `kb/build_db.py` seeds + rebuild the db + commit. The wider studio KB (licenses, cloud platform ground truth, 119 models) lives in the readouts monorepo — query `E:/AI/readouts/model-knowledge/models.db`, don't duplicate it here; this db holds only fx-dub-specific truth.
-8. **Verifying a run:** download the artifacts into one directory, then `python tools/audition_receipt.py <run_dir> --json receipt.json`. It measures the FLAC masters (settling the 48 kHz question), parses both LUFS manifests, checks the dialogue-to-bed offset, confirms the dubbed MP4 carries **both** a video and an audio track with frames intact, and exits non-zero on any contract violation. Every check cites the dispatch choice or trap it traces to. **A failing check is a finding — report it; never tune the thresholds to make it green.**
+8. **Verifying a run — BOTH receipts, always.** `tools/audition_receipt.py` checks the *container*; `tools/dialogue_receipt.py` checks what was actually *said*. A take can pass the first and be unusable — that has happened twice. For VO, transcribe with `vo_graphs.transcribe()` then `python tools/dialogue_receipt.py docs/scenes/<scene>.json <words>.json [--only-speaker NAME]`; use `--only-speaker` on any per-character stem, since that is the mode that catches a model inventing the other character's lines. Then, for the assembled run: download the artifacts into one directory and `python tools/audition_receipt.py <run_dir> --json receipt.json`. It measures the FLAC masters (settling the 48 kHz question), parses both LUFS manifests, checks the dialogue-to-bed offset, confirms the dubbed MP4 carries **both** a video and an audio track with frames intact, and exits non-zero on any contract violation. Every check cites the dispatch choice or trap it traces to. **A failing check is a finding — report it; never tune the thresholds to make it green.**
 9. **Tests are a hard gate** (studio feedback memory: tests land in the SAME commit as the code they touch — no "circle back later"). Run `python -m unittest discover -s tests -v` before any push; CI (`.github/workflows/ci.yml`) runs the same on every push touching kb/workflows/tests/assets. The detectors in `tests/graph_lint.py` ARE the executable trap ledger — proven red against the archived known-bad graphs; when a new trap is earned, add its detector + a red-gate fixture in the same commit. When "fx-dub v2.1" is pulled, drop it in `workflows/comfy-cloud/as-built/fx-dub-v2.1.json` — a forward-gate test automatically asserts all detectors stay quiet on it.
 
-## Where things stand (2026-08-22 end of session 3)
+## Where things stand (2026-08-22 end of session 4)
 
-- **THE PIPELINE IS COMPLETE AND PASSES ITS CONTRACT.** Latest run `runs/2026-08-22-v27-elevenlabs-final/` scores **19/19** on `tools/audition_receipt.py`: 48 kHz mix at −18.18 LUFS, dialogue 10.86 LU above the bed, re-muxed MP4 carrying audio with 161 frames intact.
-- **THE OPEN PROBLEM IS VOICE QUALITY, AND ONLY THAT.** Director's verdict after five engines and 30+ preset voices: *"None of these sound very natural, and only Brian is anywhere near deep enough."* Next action is `docs/briefs/2026-08-22-fxdub-11-brief.md` — a measured survey of the whole TTS surface plus a definitive answer on premium voice **cloning**.
+- **THE DUB IS DELIVERED AND ACCEPTED.** `runs/2026-08-22-v28-bytedance/` scores **19/19**: 48 kHz mix at −18.09 LUFS, dialogue **+11.17 LU** over the bed, 161 frames intact, 10.069 s, caption present. Both voices approved by ear.
+- **THE VOICE PROBLEM IS CLOSED.** The off-frame man is ByteDance Seed Audio voice-design (pitch −3, cast take `0597c19d…`) re-spoken through **same-engine audio reference**; MAC is ByteDance with an acoustic grit brief, spliced to close a 1.880 s mid-line pause. Neither character was re-rolled after approval — that rule is now load-bearing (see the lesson below).
+- **THE MISSING VERIFIER NOW EXISTS.** `tools/dialogue_receipt.py` checks *spoken content* against `docs/scenes/*.json` from a diarized transcript: lines present and ordered, no invented speech, no cross-character overlap, no mid-line straggle, consistent casting, fits the clip. **`audition_receipt.py` cannot see any of that** — it passed green on two takes the Director rejected within seconds. Run BOTH.
 - **Model decisions that changed:** ACE-Step 1.5 is **retired from the ambience path** (it is a *music* model; its rain bed metered −39.29 LUFS and was inaudible). **ElevenLabs `eleven_sfx_v2`** is the SFX engine and **`ElevenLabsTextToSpeech` (`eleven_v3`)** is the voice tier — both 48 kHz, and the TTS has a native `speed` control so no time-stretching is ever needed.
 - **Two platform constraints are dead:** `LoadAudio` resolves a cloud storage key its COMBO never lists (proved by an exact round-trip), so **re-mixing is free and deterministic** and **reference audio can reach a clone node**. Voice cloning is confirmed working on cloud.
-- **The graphs are hand-authored API JSON**, submitted via `submit_workflow` with `dry_run` for free validation — no in-app-agent round trip needed. v2.3–v2.7 therefore exist only in `runs/` and the transcript; promoting v2.7 to a saved tab is an open action.
-- **Tests:** 104 passing, CI green.
+- **The VO graphs are now CODE, not transcript blobs.** `tools/vo_graphs.py` builds all seven shapes (voice design, audio reference, clone+TTS, splice, place, mix, transcribe) and every builder is linted by `graph_lint.API_DETECTORS`, so the shapes that cost real failed jobs cannot be hand-typed back in. v2.3–v2.7 remain unrecoverable — their JSON lived in a session transcript that is gone. **Do not hand-transcribe a replacement and call it as-built.**
+- **⚠ `dry_run` is NOT proof.** It validates node existence, link integrity and required-input presence against a bundled catalog. It does **not** validate dotted auto-grow/dynamic-combo slot *names* — two shapes passed `dry_run` and then failed at execution. Only a completed job proves a graph.
+- **Tests:** 158 passing, CI green.
 - **Not started:** spot-effects timeline, local-lane graphs, npm reservation, prompt-craft `domains/audio`.
+
+## The lesson session 4 paid for
+
+Two defects reached the Director, and **every metric was green for both**: 48 kHz, right duration, clean LUFS. One take carried a fourth line nobody scripted (ByteDance's `audio reference` mode reproduces the reference clip's *dialogue content*, not just its timbre); the other held a 1.880 s pause mid-line that ran into the next character's cue. Container metrics cannot see content. **`tools/dialogue_receipt.py` exists because of those two takes — run it on every VO before the Director hears anything.**
+
+The Director's words when the voices kept changing between renders: *"This is all shit if you have no control."* He was right, and the fix is a rule, not a technique:
+
+> **CAST once → LOCK the approved take → PERFORM every later line from it.**
+> ByteDance text-only voice design is non-deterministic *regardless of seed*, so a voice approved in one render cannot be recalled by re-running. Once a take is approved, keep the AUDIO: reference it (same engine) or splice it verbatim. **Never re-render an approved character.** Cross-engine cloning does not preserve identity either — a ByteDance voice cloned into ElevenLabs came back approximated and was rejected.
+
+And the process lesson, in his words: *"Are you using the tools of the repo, because we're dogfooding right now and you're just making quick fixes and not building this out right."* Fifteen graphs had been typed into a chat, seven traps found and none written down, zero detectors added. **When this project finds a trap, the same commit adds the detector, the seed, and the test.** That is the workflow, not an aspiration.
 
 ## The lesson session 3 paid for
 

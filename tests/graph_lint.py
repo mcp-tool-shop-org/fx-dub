@@ -522,3 +522,158 @@ def run_all(graph):
 def fired(graph):
     """Names of the detectors that produced at least one finding."""
     return {name for name, findings in run_all(graph).items() if findings}
+
+
+# --------------------------------------------------------------------------
+# API-format detectors (session 4, 2026-08-22)
+# --------------------------------------------------------------------------
+# The working fx-dub pipeline is hand-authored API JSON submitted via
+# ``submit_workflow``, not a saved canvas tab -- so the traps earned while
+# building it are API-shaped and the editor-format DETECTORS above cannot see
+# them. These run against ``{node_id: {"class_type":.., "inputs": {..}}}``.
+#
+# Every one of these cost a real failed job or a rejected take.
+
+
+#: Auto-grow list inputs whose RUNTIME slot names differ from what ``get_node``
+#: advertises. The node spec calls the container ``COMFY_AUTOGROW_V3`` and shows
+#: a slot named ``<field>.item_1``; the executor wants ``<field>.audio0``. A
+#: ``dry_run`` accepts the wrong name -- pre-flight only checks that link targets
+#: exist -- so this is invisible until the job fails at execution.
+AUTOGROW_SLOT_NAMES = {
+    "ElevenLabsInstantVoiceClone": ("files", "audio0"),
+    "FishAudioInstantVoiceClone": ("files", "audio0"),
+}
+
+#: Nodes that are broken on Comfy Cloud regardless of wiring. ``AudioPad`` raises
+#: ``UnboundLocalError: pad_samples`` inside the node on every call (measured
+#: 2026-08-22). Use ``EmptyAudio`` + ``AudioConcat`` to place a clip on a
+#: timeline instead.
+BROKEN_ON_CLOUD = {
+    "AudioPad": "raises UnboundLocalError: pad_samples; use EmptyAudio + AudioConcat",
+}
+
+
+def api_nodes_of_type(api, type_name):
+    if not isinstance(api, dict):
+        return []
+    return [
+        (node_id, node) for node_id, node in api.items()
+        if isinstance(node, dict) and node.get("class_type") == type_name
+    ]
+
+
+def api_autogrow_slot_name(api):
+    """Auto-grow slot addressed by its advertised name instead of its runtime name."""
+    out = []
+    for class_type, (field, runtime) in AUTOGROW_SLOT_NAMES.items():
+        for node_id, node in api_nodes_of_type(api, class_type):
+            inputs = node.get("inputs") or {}
+            if not isinstance(inputs, dict):
+                continue
+            bad = [k for k in inputs if k.startswith(field + ".") and not k.startswith(field + "." + runtime[:-1])]
+            if bad:
+                out.append(_f("api_autogrow_slot_name", node_id,
+                              "{0} addresses {1}; the runtime wants {2}.{3}, {4}, ... "
+                              "(dry_run does NOT catch this)".format(
+                                  class_type, ", ".join(sorted(bad)), field, runtime,
+                                  field + "." + runtime[:-1] + "1")))
+    return out
+
+
+def api_fish_autogrow_voices(api):
+    """FishAudioTextToSpeech addressing the s2.1-pro voices list by its spec name."""
+    out = []
+    for node_id, node in api_nodes_of_type(api, "FishAudioTextToSpeech"):
+        inputs = node.get("inputs") or {}
+        if not isinstance(inputs, dict):
+            continue
+        bad = [k for k in inputs if k.startswith("model.voices.item_")]
+        if bad:
+            out.append(_f("api_fish_autogrow_voices", node_id,
+                          "model.voices.item_N is rejected at execution "
+                          "('unexpected keyword argument'); use model 's1' with "
+                          "model.voice, or discover the runtime slot name first"))
+    return out
+
+
+def api_broken_node(api):
+    """A node that fails on Comfy Cloud no matter how it is wired."""
+    out = []
+    for class_type, why in BROKEN_ON_CLOUD.items():
+        for node_id, _node in api_nodes_of_type(api, class_type):
+            out.append(_f("api_broken_node", node_id,
+                          "{0} is broken on Comfy Cloud: {1}".format(class_type, why)))
+    return out
+
+
+def api_bytedance_global_pitch_multivoice(api):
+    """ByteDance asked to voice two characters while pitch_rate is non-zero.
+
+    ``pitch_rate`` is a NODE-level knob, so it shifts every speaker in the
+    prompt by the same interval -- the two characters collapse toward one voice.
+    Render one pass per character (the timestamps are an absolute timeline, so
+    the passes layer) and give each its own pitch.
+    """
+    out = []
+    for node_id, node in api_nodes_of_type(api, "ByteDanceSeedAudio"):
+        inputs = node.get("inputs") or {}
+        if not isinstance(inputs, dict):
+            continue
+        pitch = _as_number(inputs.get("pitch_rate"), 0) or 0
+        prompt = inputs.get("text_prompt")
+        if not isinstance(prompt, str) or pitch == 0:
+            continue
+        speakers = set()
+        for line in prompt.splitlines():
+            # a timestamp prefix carries its own colon -- "[0.4s:2.0s] MAC: ..."
+            body = line.split("]", 1)[1] if line.lstrip().startswith("[") and "]" in line else line
+            if ":" not in body:
+                continue
+            label = body.split(":", 1)[0].strip()
+            if label.isupper() and 0 < len(label) <= 16:
+                speakers.add(label)
+        if len(speakers) > 1:
+            out.append(_f("api_bytedance_global_pitch_multivoice", node_id,
+                          "pitch_rate={0} applies to all of {1}; render one pass per "
+                          "character instead".format(pitch, ", ".join(sorted(speakers)))))
+    return out
+
+
+def api_bytedance_reference_unverified(api):
+    """ByteDance in audio-reference mode, which re-speaks the reference's lines.
+
+    Not a wiring defect -- a mandatory-verification marker. In ``audio reference``
+    mode the model reproduces the reference clip's DIALOGUE CONTENT, not just its
+    timbre, so a multi-line reference yields lines the prompt never asked for.
+    Any such render must be gated by ``tools/dialogue_receipt.py --only-speaker``.
+    """
+    out = []
+    for node_id, node in api_nodes_of_type(api, "ByteDanceSeedAudio"):
+        inputs = node.get("inputs") or {}
+        if isinstance(inputs, dict) and inputs.get("reference_mode") == "audio reference":
+            out.append(_f("api_bytedance_reference_unverified", node_id,
+                          "audio-reference render reproduces the reference's dialogue "
+                          "content; gate the output with dialogue_receipt --only-speaker"))
+    return out
+
+
+#: API detector registry. Kept separate from DETECTORS because the graph shape
+#: differs; ``test_graphs.py`` drives both.
+API_DETECTORS = OrderedDict([
+    ("api_autogrow_slot_name", api_autogrow_slot_name),
+    ("api_fish_autogrow_voices", api_fish_autogrow_voices),
+    ("api_broken_node", api_broken_node),
+    ("api_bytedance_global_pitch_multivoice", api_bytedance_global_pitch_multivoice),
+    ("api_bytedance_reference_unverified", api_bytedance_reference_unverified),
+])
+
+
+def run_all_api(api):
+    """``{detector_name: [Finding, ...]}`` for every registered API detector."""
+    return OrderedDict((name, fn(api)) for name, fn in API_DETECTORS.items())
+
+
+def fired_api(api):
+    """Names of the API detectors that produced at least one finding."""
+    return {name for name, findings in run_all_api(api).items() if findings}

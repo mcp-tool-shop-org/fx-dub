@@ -1,0 +1,31 @@
+{
+  "name": "night-street",
+  "note": "The Director's staging, verbatim. Do not rewrite the lines. VOICE is off-frame and opens AND closes, so MAC is listening through the final line.",
+  "clip_duration_s": 10.062,
+  "max_gap_within_line_s": 0.5,
+  "min_gap_between_speakers_s": 0.0,
+  "cast": {
+    "VOICE": "off-frame, deep and gritty",
+    "MAC": "on-frame, gritty, weary"
+  },
+  "lines": [
+    {
+      "speaker": "VOICE",
+      "text": "Hey, how's it going?"
+    },
+    {
+      "speaker": "MAC",
+      "text": "Not bad. Can't complain.",
+      "max_gap_s": 0.15,
+      "direction": "Director 2026-08-22: 'There's no pause in between.' A gap here runs into VOICE's next cue."
+    },
+    {
+      "speaker": "VOICE",
+      "text": "Good to hear, good to hear."
+    },
+    {
+      "speaker": "VOICE",
+      "text": "Hey, tell Charlie I got that thing for him, whenever he wants to drop by."
+    }
+  ]
+}

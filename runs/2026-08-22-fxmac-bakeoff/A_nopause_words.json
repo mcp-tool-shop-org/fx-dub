@@ -1,0 +1,58 @@
+[
+  {
+    "text": "Not",
+    "type": "word",
+    "start": 0.099,
+    "end": 0.3,
+    "speaker_id": "speaker_0",
+    "logprob": -2.0265558760002023e-06
+  },
+  {
+    "text": " ",
+    "type": "spacing",
+    "start": 0.3,
+    "end": 0.319,
+    "speaker_id": "speaker_0",
+    "logprob": -1.1920928244535389e-07
+  },
+  {
+    "text": "bad.",
+    "type": "word",
+    "start": 0.319,
+    "end": 0.579,
+    "speaker_id": "speaker_0",
+    "logprob": -0.004010377451772129
+  },
+  {
+    "text": " ",
+    "type": "spacing",
+    "start": 0.579,
+    "end": 0.759,
+    "speaker_id": "speaker_0",
+    "logprob": -1.1920928244535389e-07
+  },
+  {
+    "text": "Can't",
+    "type": "word",
+    "start": 0.759,
+    "end": 0.939,
+    "speaker_id": "speaker_0",
+    "logprob": -9.536742595628311e-08
+  },
+  {
+    "text": " ",
+    "type": "spacing",
+    "start": 0.939,
+    "end": 0.959,
+    "speaker_id": "speaker_0",
+    "logprob": -7.629365427419543e-06
+  },
+  {
+    "text": "complain",
+    "type": "word",
+    "start": 0.959,
+    "end": 1.359,
+    "speaker_id": "speaker_0",
+    "logprob": -7.629365427419543e-06
+  }
+]

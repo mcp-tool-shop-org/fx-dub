@@ -14,76 +14,50 @@ Repo: https://github.com/mcp-tool-shop-org/fx-dub · local `E:\AI\fx-dub` · bra
 
 **Design is locked and externally verified** — [`docs/design/2026-08-21-fxdub-v1.dispatch.md`](docs/design/2026-08-21-fxdub-v1.dispatch.md), 45 findings, decisions A–J, prism receipt `prism-01m0k6mbv7sh918mhja9bxpszt` (Ed25519, `signature_valid: true`) committed in-repo. **Do not re-litigate A–J without new evidence.**
 
-## 2. THE PIPELINE IS DONE. THE VOICES ARE NOT.
+## 2. THE DUB IS DELIVERED. 19/19 WITH DIRECTOR-APPROVED VOICES.
 
-**fx-dub runs end to end and passes its full contract.** Latest run
-(`runs/2026-08-22-v27-elevenlabs-final/`, job `11759129-1d01-4d36-9de4-7e055afbd1f4`) scores
-**19/19** on `tools/audition_receipt.py`:
+`runs/2026-08-22-v28-bytedance/` (session 4) passes the full contract:
 
-- 48 kHz mix at **−18.18 LUFS** (target −18.0 ±2.0)
-- dialogue **10.86 LU** above the ambience bed (ducking band is 8–20)
-- re-muxed MP4 carries audio, **161 frames intact**, 10.062 s
-- caption from mid-clip frame 80, stems + manifests all present
+- 48 kHz mix at **-18.09 LUFS** (target -18.0 +/-2.0)
+- dialogue **+11.17 LU** over the ambience bed (band 8-20)
+- re-muxed MP4 carries audio, **161 frames intact**, 10.069 s
+- caption from mid-clip frame 80, stems + all three LUFS manifests present
 
-**The one open problem is voice quality.** The Director's verdict, after five engines:
-*"None of these sound very natural, and only Brian is anywhere near deep enough."*
+And the VO passes the NEW content receipt **11/11** (`tools/dialogue_receipt.py`):
+every scripted line present and ordered, no invented speech, no cross-character
+overlap, no mid-line straggle, two characters -> two distinct voices, fits the clip.
 
-⚠ **Do not repeat the mistake that produced that verdict.** I worked down a preset list
-instead of going to voice CLONING, and I reached for a cheap post-hoc time-stretch instead of
-the premium engine's own controls — after the Director had explicitly said to stop economising.
-The standing instruction is in memory as [[feedback-stop-budgeting-credits]]: **buy the good
-model, buy options, never optimise cost.**
+### The voices, and how to reproduce them
 
-### The scene (Director's words — do not rewrite them)
+| Character | Source | Key |
+|---|---|---|
+| VOICE (off-frame, deep) | ByteDance cast take, re-spoken via **same-engine audio reference**, 3 lines at scene timestamps, seed 502 | ref `0597c19d...`, render `cb457cf0...`, MAC's bleed excised -> `b7066f85...` |
+| MAC (on-frame, gritty) | ByteDance text-only, acoustic grit brief, pitch 0, seed 601 | take `37d38cda...`, spliced to close a 1.880 s pause -> `d7ba748c...` |
+| VO (assembled) | MAC placed at 2.30 s into the VOICE track | `8eadf234...` |
 
-```
-VOICE (off-frame, DEEP + gritty):  Hey, how's it going?
-MAC   (on-frame, gritty, weary):   Not bad. Can't complain.
-VOICE:                             Good to hear, good to hear.
-VOICE:                             Hey, tell Charlie I got that thing for him,
-                                   whenever he wants to drop by.
-```
-The off-frame man opens *and* closes, so the MC is listening through the final line — that is
-the beat the Director described and it is staged correctly now.
+**Gain-staged from the meter, not from the old numbers.** The ByteDance VO measured
+**-25.03 LUFS** where the ElevenLabs VO sat at -18.34 — reusing the v2.7 recipe would
+have buried the dialogue by ~7 dB. Applied: `AudioAdjustVolume +7` on the VO,
+`gain_1_db -12` on the bed.
 
-### Next action
+### THE RULE THAT MATTERS MOST
 
-**Relay `docs/briefs/2026-08-22-fxdub-11-brief.md`** to the Comfy Cloud in-app agent. It asks
-for a measured survey of the *entire* TTS surface (not the first list we found), the full preset
-rosters for every engine, the delivery-knob map, a definitive answer on whether `LoadAudio` can
-feed `ElevenLabsInstantVoiceClone` / `FishAudioInstantVoiceClone`, and six auditioned candidates
-across three engines.
+> **CAST once -> LOCK the approved take -> PERFORM every later line from it.**
 
-**Cloning is the likely answer.** We proved `LoadAudio` resolves a storage key its COMBO never
-lists, so reference audio *can* reach a clone node — which means the Director can supply a real
-voice reference instead of us shopping preset lists.
+ByteDance text-only voice design is non-deterministic *regardless of seed*. A voice
+the Director approves cannot be recalled by re-rendering — re-running the same prompt
+returns a different man. Once a take is approved, keep the AUDIO and either reference
+it (same engine) or splice it verbatim. Cross-engine cloning does **not** preserve
+identity: a ByteDance voice cloned into ElevenLabs came back approximated and was
+rejected by ear.
 
-### Assembly recipe, once a voice is chosen
+### Known, accepted
 
-Everything below is measured and works; only the VO source needs swapping.
-
-- **Bed:** ElevenLabs `eleven_sfx_v2`, rain + footsteps-A layered at −4 dB. Storage key
-  `d8ef106aaa16af33f449e3097f9d4fe78b42a767e508b0476dd7777e20ddfff3.flac`, −17.20 LUFS, 48 kHz.
-  Footsteps A (leather heels on wet concrete) is the Director's pick; B (boots) was rejected,
-  and the original "splashing through puddles" take was rejected outright.
-- **Mix:** bed on `AudioMix.audio_1` (it adopts audio_1's rate), VO on `audio_2`.
-- **Gain-stage from MEASURED stem loudness, never a fixed number.** Engines differ by 8 dB on
-  the same line. Working recipe for the ElevenLabs VO: `AudioAdjustVolume −3` on the VO,
-  `gain_1_db −12` on the bed → mix −18.18 LUFS, 10.86 LU separation.
-- **Caption:** `LoadVideo` → `GetVideoComponents` → `ImageFromBatch(batch_index=80, length=1)`
-  → `Florence2Run`. The single-frame pick is mandatory (a batch makes Florence return a LIST
-  that `SaveText` cannot write) and frame 80 also describes the scene far better than frame 0.
-- **Mux:** `VHS_VideoCombine`, `frame_rate` 16 literal, `images` straight from
-  `GetVideoComponents`.
-- **Verify:** `python tools/audition_receipt.py <dir> --bed-gain-db <N>`. A `bed_lufs` manifest
-  is REQUIRED — R128 gates a quiet bed out of the mix master, so ducking depth is unmeasurable
-  without a meter on the bed stem.
-
-### Re-mixing is free
-
-`LoadAudio` + storage keys means any remix is deterministic and costs nothing — no regeneration.
-Pull stem keys from `get_output` and rebuild. Every mix in session 3 after the first was done
-this way.
+The last line's tail is clipped: the VOICE render's `[6.3s:9.8s]` timestamp ended the
+take at 9.840 s, so the decay on "drop by" was never generated. The mix is 10.000 s and
+the picture is 10.062 s, so there is room — re-render that one line with the window
+opened to ~10.0 s against the same reference to recover it. Director's call:
+*"Cuts him off at the end, but it's good enough."*
 
 ## 3. What the audition answers
 
