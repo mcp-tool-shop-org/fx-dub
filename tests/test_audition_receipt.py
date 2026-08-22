@@ -51,8 +51,9 @@ def make_flac(sample_rate=48000, channels=2, seconds=10.0) -> bytes:
     return build_streaminfo(sample_rate, channels, 16, int(sample_rate * seconds))
 
 
-def write_run(root, *, mix_rate=48000, bed_rate=48000, vo_rate=48000,
-              mix_lufs=-18.1, vo_lufs=-7.0, frames=161, handlers=(b"vide", b"soun"),
+def write_run(root, *, mix_rate=48000, bed_rate=48000, vo_rate=24000,
+              mix_lufs=-18.1, vo_lufs=-14.0, bed_lufs=-17.2, bed_gain_db=-9.0,
+              frames=161, handlers=(b"vide", b"soun"),
               track_duration=164864, caption="a rain-soaked street at night", omit=()):
     """Materialise a synthetic run directory; `omit` drops deliverables by key."""
     files = {
@@ -63,6 +64,8 @@ def write_run(root, *, mix_rate=48000, bed_rate=48000, vo_rate=48000,
                      "Integrated Loudness: {0} LUFS\n".format(mix_lufs).encode()),
         "vo_lufs": ("vo_lufs_00001_.txt",
                     "Integrated Loudness: {0} LUFS\n".format(vo_lufs).encode()),
+        "bed_lufs": ("bed_lufs_00001_.txt",
+                     "Integrated Loudness: {0} LUFS\n".format(bed_lufs).encode()),
         "caption": ("caption_00001_.txt", caption.encode()),
         "dubbed": ("dubbed_00001_.mp4",
                    make_mp4(frames=frames, handlers=handlers, duration=track_duration)),
@@ -128,8 +131,11 @@ class RedGateTests(unittest.TestCase):
     def _run(self, **kwargs):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
+        # bed_gain_db describes the GRAPH, not the artifacts, so it is threaded to
+        # the checker rather than written into the run directory.
+        bed_gain_db = kwargs.get("bed_gain_db", -9.0)
         write_run(tmp.name, **kwargs)
-        return verdict(audition_receipt.check_run(tmp.name))
+        return verdict(audition_receipt.check_run(tmp.name, bed_gain_db=bed_gain_db))
 
     def test_catches_wrong_sample_rate(self):
         v = self._run(mix_rate=44100)
@@ -144,8 +150,30 @@ class RedGateTests(unittest.TestCase):
         self.assertFalse(v["loudness:mix_target"])
 
     def test_catches_dialogue_buried_in_the_bed(self):
-        v = self._run(mix_lufs=-18.0, vo_lufs=-18.2)
+        # VO -18.2, bed -17.2 at 0 dB gain => the dialogue sits BELOW the bed.
+        v = self._run(vo_lufs=-18.2, bed_lufs=-17.2, bed_gain_db=0.0)
         self.assertFalse(v["loudness:dialogue_anchored"])
+
+    def test_ducking_depth_is_unmeasurable_without_a_bed_meter(self):
+        """R128 gates a quiet bed out of the mix master, so mix+vo cannot answer it.
+
+        This is the defect that shipped in the first audition: the check read
+        +0.00 LU on a mix whose bed was 23 LU down and inaudible. Absent a bed
+        meter the honest verdict is FAIL, never a pass by omission.
+        """
+        v = self._run(omit=("bed_lufs",))
+        self.assertFalse(v["loudness:dialogue_anchored"])
+
+    def test_vo_stem_at_24k_is_not_a_failure(self):
+        """Every cloud TTS decodes 24 kHz and no SRC node exists on the platform.
+
+        Asserting 48 kHz on a VO *source* stem was a check no buildable graph
+        could pass. What must hold is that the DELIVERED mix carries 48 kHz.
+        """
+        v = self._run(vo_rate=24000)
+        self.assertTrue(v["audio:stem_vo:native_rate"])
+        self.assertTrue(v["audio:rates_agree"])
+        self.assertTrue(v["audio:mix:rate48k"])
 
     def test_catches_a_silent_dub(self):
         """The re-mux failing is the single worst outcome: video with no audio."""
@@ -191,7 +219,11 @@ class RedGateTests(unittest.TestCase):
             self._run(mix_rate=44100, bed_rate=22050, vo_rate=32000,
                       mix_lufs=-3.0, frames=1, caption=""),
             # dialogue buried in the bed (offset below the band)
-            self._run(mix_lufs=-18.0, vo_lufs=-18.2),
+            self._run(vo_lufs=-18.2, bed_lufs=-17.2, bed_gain_db=0.0),
+            # ducking depth unmeasurable: no meter on the bed stem
+            self._run(omit=("bed_lufs",)),
+            # a VO stem at a rate no cloud TTS produces (44.1k is a music rate)
+            self._run(vo_rate=44100),
             # the two mux catastrophes: no audio, and no video
             self._run(handlers=(b"vide",)),
             self._run(handlers=(b"soun",)),

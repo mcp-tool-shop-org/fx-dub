@@ -1,0 +1,161 @@
+{
+  "run_dir": "runs/2026-08-22-v23-final",
+  "checks": [
+    {
+      "check": "deliverable:mix",
+      "ok": true,
+      "detail": "mix_00001.flac",
+      "traces_to": "dispatch choice H"
+    },
+    {
+      "check": "deliverable:stem_bed",
+      "ok": true,
+      "detail": "stem_bed_00001.flac",
+      "traces_to": "dispatch choice H"
+    },
+    {
+      "check": "deliverable:stem_vo",
+      "ok": true,
+      "detail": "stem_vo_00001.flac",
+      "traces_to": "dispatch choice H"
+    },
+    {
+      "check": "deliverable:mix_lufs",
+      "ok": true,
+      "detail": "mix_lufs_00001.txt",
+      "traces_to": "dispatch choice H"
+    },
+    {
+      "check": "deliverable:vo_lufs",
+      "ok": true,
+      "detail": "vo_lufs_00001.txt",
+      "traces_to": "dispatch choice H"
+    },
+    {
+      "check": "deliverable:bed_lufs",
+      "ok": true,
+      "detail": "bed_lufs_00001.txt",
+      "traces_to": "dispatch choice H"
+    },
+    {
+      "check": "deliverable:caption",
+      "ok": true,
+      "detail": "caption_00001.txt",
+      "traces_to": "dispatch choice H"
+    },
+    {
+      "check": "deliverable:dubbed",
+      "ok": true,
+      "detail": "dubbed_00001-audio.mp4",
+      "traces_to": "dispatch choice H"
+    },
+    {
+      "check": "audio:mix:rate48k",
+      "ok": true,
+      "detail": "48000 Hz, 2ch, 10.000s",
+      "traces_to": "dispatch choice F (48 kHz runtime standard)"
+    },
+    {
+      "check": "audio:stem_bed:rate48k",
+      "ok": true,
+      "detail": "48000 Hz, 2ch, 10.000s",
+      "traces_to": "dispatch choice F (48 kHz runtime standard)"
+    },
+    {
+      "check": "audio:stem_vo:native_rate",
+      "ok": true,
+      "detail": "24000 Hz, 2ch, 4.617s (source stem; cloud TTS is 24 kHz)",
+      "traces_to": "measured: all cloud TTS decodes 24 kHz mono; no SRC node exists"
+    },
+    {
+      "check": "audio:rates_agree",
+      "ok": true,
+      "detail": "delivered rates: {'mix': 48000, 'stem_bed': 48000} (source stems excluded: {'stem_vo': 24000})",
+      "traces_to": "trap: no sample-rate-conversion node exists on cloud"
+    },
+    {
+      "check": "loudness:mix_target",
+      "ok": true,
+      "detail": "-18.05 LUFS (target -18.0 +/- 2.0)",
+      "traces_to": "dispatch choice F (AES TD1008 'Assorted')"
+    },
+    {
+      "check": "loudness:dialogue_anchored",
+      "ok": true,
+      "detail": "VO - bed = +12.26 LU (expect 8-20; bed stem -17.20 LUFS at -9 dB mix gain)",
+      "traces_to": "dispatch choice F (ATSC A/85 anchor + JAES 2019 ducking depth)"
+    },
+    {
+      "check": "dub:has_audio",
+      "ok": true,
+      "detail": "handlers=['vide', 'soun', 'mdir']",
+      "traces_to": "the whole point of re-mux: audio muxed back onto the video"
+    },
+    {
+      "check": "dub:has_video",
+      "ok": true,
+      "detail": "handlers=['vide', 'soun', 'mdir']",
+      "traces_to": "dispatch choice H"
+    },
+    {
+      "check": "dub:frames_intact",
+      "ok": true,
+      "detail": "161 frames (fixture has 161)",
+      "traces_to": "trap: skip_first_frames on the loader silently truncates the dub"
+    },
+    {
+      "check": "dub:duration",
+      "ok": true,
+      "detail": "10.069s (fixture 10.062s)",
+      "traces_to": "fixture cross-verified 2026-08-21"
+    },
+    {
+      "check": "caption:non_empty",
+      "ok": true,
+      "detail": "411 chars",
+      "traces_to": "dispatch choice H (the semantic intermediate must reach the manifest)"
+    }
+  ],
+  "measured": {
+    "mix": {
+      "sample_rate": 48000,
+      "channels": 2,
+      "bits_per_sample": 16,
+      "total_samples": 480000,
+      "duration_s": 10.0
+    },
+    "stem_bed": {
+      "sample_rate": 48000,
+      "channels": 2,
+      "bits_per_sample": 16,
+      "total_samples": 480000,
+      "duration_s": 10.0
+    },
+    "stem_vo": {
+      "sample_rate": 24000,
+      "channels": 2,
+      "bits_per_sample": 16,
+      "total_samples": 110805,
+      "duration_s": 4.616875
+    },
+    "lufs": {
+      "mix_lufs": -18.05,
+      "vo_lufs": -13.94,
+      "bed_lufs": -17.2
+    },
+    "vo_minus_bed_lu": 12.26,
+    "dubbed": {
+      "movie_timescale": 0,
+      "movie_header_valid": false,
+      "handlers": [
+        "vide",
+        "soun",
+        "mdir"
+      ],
+      "has_video_track": true,
+      "has_audio_track": true,
+      "frame_count": 161
+    },
+    "caption_chars": 411
+  }
+}
