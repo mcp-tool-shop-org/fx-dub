@@ -4,6 +4,8 @@ You are working on **fx-dub**: video → describe (Florence-2) → rewrite → g
 
 **State snapshot: 2026-08-21, session 1 (scaffold + rounds 1–4 of the build dialog).**
 
+> **Continuing a session?** Read [`HANDOFF.md`](HANDOFF.md) — it carries the live state (what's blocked, what's next, what's approved). This file is the durable manual; that one is the current position.
+
 ## Read in this order
 
 1. This file.
