@@ -40,7 +40,7 @@ Essa falha é real. Um modelo no modo `audio reference` reproduziu o *diálogo* 
 
 | | Verificações | Problemas detectados |
 |---|---|---|
-| **`fxdub-receipt`** | conjunto de arquivos final, masters de 48 kHz, loudness EBU R128, profundidade de redução do volume do diálogo em relação à trilha sonora, arquivo MP4 remixado que contém **ambas** as faixas, quadros intactos | uma versão dublada silenciosa, uma versão dublada truncada, diálogo abafado na trilha sonora, uma mixagem que não atingiu o objetivo |
+| **`fxdub-receipt`** | conjunto de arquivos a serem entregues, masters em 48 kHz, nível de loudness EBU R128, profundidade do efeito de atenuação do diálogo em relação ao áudio de fundo, o arquivo MP4 remuxado contém **ambas** as faixas, os quadros permanecem intactos, **a contagem de pessoas na legenda corresponde aos personagens**. | uma dublagem silenciosa, uma dublagem truncada, diálogo abafado no áudio de fundo, uma mixagem que não atingiu o objetivo, **um legendador "alucinando" alguém na cena**. |
 | **`fxdub-dialogue`** | todas as falas do roteiro presentes e na ordem correta, nenhuma fala inventada, nenhum cruzamento de personagens, nenhuma pausa no meio da frase, uma voz por personagem, compatível com o clipe | um modelo inventando falas, um personagem sendo redefinido entre as renderizações, uma pausa que interrompe a próxima fala, dois personagens combinados em uma única voz |
 
 **Uma verificação com falha é uma constatação, não um erro na ferramenta.** Relate-a; nunca ajuste o limite para que ela seja aprovada. Cada verificação cita o padrão ou o defeito medido ao qual se refere, para que você possa discutir os resultados com base nas evidências.
@@ -52,6 +52,11 @@ A direção está no roteiro, não na mente de um agente:
 ```json
 {
   "clip_duration_s": 10.062,
+  "cast": {
+    "VOICE": { "description": "off-frame, deep and gritty", "on_frame": false },
+    "MAC":   { "description": "on-frame, gritty, weary", "on_frame": true,
+               "face": { "frame": 60, "x": 348, "y": 122 } }
+  },
   "lines": [
     { "speaker": "VOICE", "text": "Hey, how's it going?" },
     { "speaker": "MAC",   "text": "Not bad. Can't complain.",
@@ -63,6 +68,8 @@ A direção está no roteiro, não na mente de um agente:
 ```
 
 `max_gap_s` nessa linha explica por que o verificador rejeita uma gravação, enquanto um limite global permitiria a passagem. A nota ao lado indica por que o número é 0,15 e não outro valor.
+
+`on_frame` é o que permite que um pacote sem informações visuais detecte um defeito na legenda. Passe `--scene` para `fxdub-receipt` e ele compara o número de pessoas que a legenda *indica* com o número que o contrato declara como visível. Na versão entregue, essa verificação falha: o legendador escreveu *"dois homens... um de frente para o outro"* em uma cena com apenas um personagem, e é essa legenda que alimenta o prompt de áudio.
 
 `--only-speaker MAC` restringe o contrato a um personagem, que é como você verifica uma **faixa por personagem**: ela deve conter as falas desse personagem e *silêncio* quando qualquer outra pessoa fala. Verificar uma faixa em relação à cena inteira oculta exatamente o erro mencionado acima.
 
@@ -79,12 +86,13 @@ graph = vo_graphs.transcribe("<storage-key>.flac", "run/words")
 
 ## Construtores de gráficos
 
-`fxdub.vo_graphs` também constrói os gráficos da fase VO: design de voz, referência de áudio com o mesmo mecanismo, clonagem e reprodução, emenda, inserção na linha do tempo, mixagem. Eles existem porque a alternativa — digitar manualmente o JSON da API em uma janela de chat — produz gráficos que desaparecem com a sessão e reintroduzem silenciosamente defeitos pelos quais já se pagou.
+`fxdub.vo_graphs` também cria os gráficos da fase de voz (VO): design de voz, referência de áudio do mesmo mecanismo, clonagem e reprodução de fala, junção, posicionamento na linha do tempo, mixagem — e a fase da imagem: extração de quadros, sincronização labial e muxagem. Eles existem porque a alternativa — digitar manualmente o JSON da API em uma janela de chat — produz gráficos que desaparecem com a sessão e reintroduzem silenciosamente defeitos pelos quais já se pagou.
 
 Cada construtor é verificado pelos detectores de erros do repositório, para que as configurações que causam falhas reais não possam ser criadas acidentalmente. Dois exemplos do que isso codifica:
 
-- A entrada de autoexpansão do nó de clonagem da ElevenLabs é tratada como `files.audio0` em tempo de execução — **não** o `files.item_1` que seu próprio esquema anuncia — e uma execução de teste aceita o nome incorreto sem reclamação.
-- O `pitch_rate` da ByteDance é global para o nó, portanto, um único nó não pode dar voz a dois personagens com tons diferentes. Seus carimbos de data/hora se referem a uma linha do tempo de saída absoluta, portanto, a correção é uma passagem por personagem, em camadas.
+- A entrada de autoexpansão do nó de clonagem ElevenLabs é tratada como `files.audio0` no tempo de execução — **não** o `files.item_1` que seu próprio esquema anuncia — e um teste preliminar aceita o nome incorreto sem reclamação.
+- O `pitch_rate` da ByteDance é global para todos os nós, portanto, um único nó não pode dar voz a dois personagens em alturas diferentes. Seus carimbos de data/hora se referem a uma linha do tempo de saída absoluta, então a correção é feita em uma única passagem por personagem, em camadas.
+- O `speaker_selection` padrão do nó de sincronização labial é *deixe o modelo decidir*. Deixe-o sem fixar e o trabalho será concluído, retornando um arquivo MP4 com os quadros corretos e a duração adequada, e passando em todas as verificações do contêiner — mas com a boca da pessoa errada se movendo. O criador fixa as coordenadas; o detector falha no gráfico que não as possui.
 
 Construir um gráfico é uma função pura que recebe argumentos e retorna um `dict`. **Nada neste pacote envia, carrega ou gasta.**
 
@@ -130,6 +138,11 @@ video ─► describe (Florence-2, pinned, single mid-clip frame)
                                    │ mix.flac + LUFS manifests
                                    ▼
                         re-mux ─► dubbed.mp4
+                                   │
+                       (optional)  ▼
+                    lip-sync ─► sync one named face to that
+                                character's own track, then
+                                re-mux the full mix back over it
 ```
 
 > **"Remixar"** = re-multiplexar: a trilha sonora final é gravada de volta no contêiner de vídeo, sem alterar os pixels. Não é um erro de digitação para "mixar" — a mixagem ocorre em uma etapa anterior; esta é a etapa que fornece um arquivo `dubbed.mp4` reproduzível.
@@ -138,15 +151,18 @@ video ─► describe (Florence-2, pinned, single mid-clip frame)
 
 ## O que é honesto neste design
 
-- **As legendas transmitem significado, não tempo.** Um fluxo de trabalho mediado por legendas é adequado para ambientes e diálogos; nunca sincronizará o som de uma porta batendo apenas com texto. A sincronização precisa requer uma linha do tempo de eventos — a [Base de Conhecimento](docs/knowledge-base.md#stage-2b--direct-videoaudio-the-sync-first-alternative) mapeia os modelos diretos de vídeo→áudio que o fazem nativamente, e suas licenças.
-- **Uma descrição de cena não é um roteiro.** Você escreve as palavras que seus personagens dizem; o fluxo de trabalho faz com que soem corretas.
-- **A identidade da voz não é gratuita.** As vozes projetadas por prompts são não determinísticas *independentemente da semente* — uma voz que você aprova não pode ser recuperada executando o mesmo prompt novamente. Defina uma vez, mantenha o áudio aprovado e, em seguida, faça referência ou combine-o para sempre. A clonagem entre mecanismos também não preserva a identidade. Esta é a lição mais cara no registro de armadilhas do repositório, e a verificação `one_voice_per_character` garante que ela seja aprendida.
-- **Os níveis de mixagem vêm de padrões e estudos de audição** (BS.1770-5, AES TD1008, pesquisa de ducking JAES), não de impressões — e são controles, porque as preferências diferem mensuravelmente.
-- **A governança é um recurso.** Não clone a voz de uma pessoa real sem consentimento. A fala sintética publicada na UE acarreta uma obrigação de marcação legível por máquina do Artigo 50; o recibo JSON é construído para fazer parte desse registro de origem, e a [seção de publicação da Base de Conhecimento](docs/knowledge-base.md#publishing--governance-read-before-you-ship-a-dubbed-video) informa qual divulgação você deve fornecer onde publicar. Sem pacotes de voz específicos para pessoas, nunca. Nem para chamadas automatizadas.
+- **As legendas transmitem significado, não tempo.** Um pipeline mediado por legendas é adequado para ambientes e diálogos; ele nunca sincronizará o som de uma porta batendo apenas com prosa. A sincronização precisa requer uma linha do tempo de eventos — a [Base de Conhecimento](docs/knowledge-base.md#stage-2b--direct-videoaudio-the-sync-first-alternative) mapeia os modelos diretos de vídeo→áudio que fazem isso nativamente, e suas licenças.
+- **Uma descrição de cena não é um roteiro.** Você escreve as palavras que seus personagens dizem; o pipeline faz com que soem corretas.
+- **A identidade da voz não é gratuita.** As vozes projetadas por prompts são não determinísticas *independentemente da semente* — uma voz que você aprova não pode ser recuperada executando o mesmo prompt novamente. Defina os personagens uma vez, mantenha o áudio aprovado e, em seguida, use-o como referência ou junte-o para sempre. A clonagem entre mecanismos também não preserva a identidade. Esta é a lição mais cara no registro de armadilhas do repositório, e a verificação `one_voice_per_character` é o que garante que ela seja aprendida.
+- **A sincronização labial controla um rosto, portanto, precisa da faixa de um único personagem.** Forneça a mixagem e ele fará com que cada personagem pronuncie todas as falas — incluindo aquelas pertencentes a alguém que não está na cena — e ainda assim passará em todas as verificações de áudio, porque o áudio nunca mudou. Forneça uma faixa por personagem e o silêncio se tornará o desempenho correto: o personagem escuta. Os resultados são não determinísticos *independentemente da semente*, portanto, uma versão aprovada é mantida e nunca renderizada novamente. O nó também ajusta o tempo da imagem; verifique a contagem de quadros no arquivo entregue, não em sua saída bruta.
+- **Os números de mixagem vêm de padrões e estudos de audição** (BS.1770-5, AES TD1008, pesquisa de sincronização JAES), não de impressões — e são controles, porque as preferências diferem mensuravelmente.
+- **A governança é um recurso.** Não clone a voz de uma pessoa real sem consentimento. A fala sintética publicada na UE acarreta uma obrigação de marcação legível por máquina do Artigo 50; o JSON de recebimento é criado para fazer parte desse rastreamento de proveniência, e a [seção de publicação da KB](docs/knowledge-base.md#publishing--governance-read-before-you-ship-a-dubbed-video) informa qual divulgação você deve fornecer onde postar. Nunca use pacotes de voz específicos de pessoas, nem para chamadas automatizadas.
 
 ## Status
 
-**v1.0.0 — o fluxo de trabalho é entregue e ambos os recibos estão positivos.** Uma cena noturna com dois personagens obtém **19/19** no contrato do contêiner (48 kHz, −18,09 LUFS, diálogo +11,17 LU acima da base, 161 quadros intactos, 10,069 s) e **11/11** no contrato de conteúdo. 167 testes, CI positivo. Histórico completo em [CHANGELOG](CHANGELOG.md).
+**v1.1.0 — o pipeline é entregue, ambos os recibos estão verdes e a imagem está sincronizada com os lábios.** Uma cena noturna com dois personagens obtém **19/19** no contrato do contêiner (48 kHz, −18,09 LUFS, diálogo +11,17 LU acima do áudio de fundo, 161 quadros intactos, 10,069 s) e **11/11** no contrato de conteúdo. A variante sincronizada com os lábios mantém o mesmo contrato — 832 × 480, 161 quadros, ambas as faixas — com a boca do MAC em suas falas e fechada enquanto o personagem fora da cena fala.
+
+Ele obtém **19/20** depois que você passa `--scene`, e a falha é real: o arquivo entregue na execução atual contém duas pessoas em uma cena com apenas um personagem. Essa verificação é nova nesta versão e detectou um defeito que estava sendo aprovado anteriormente. 189 testes, CI verde. Histórico completo no [CHANGELOG](CHANGELOG.md).
 
 | Parte | Estado |
 |---|---|

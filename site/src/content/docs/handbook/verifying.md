@@ -39,7 +39,7 @@ mixing it produces two men saying the same line a quarter-second apart.
 ## The container receipt
 
 ```bash
-fxdub-receipt <run_dir> [--bed-gain-db N] [--json out.json]
+fxdub-receipt <run_dir> [--scene SCENE.json] [--bed-gain-db N] [--json out.json]
 ```
 
 | Group | Checks |
@@ -48,7 +48,7 @@ fxdub-receipt <run_dir> [--bed-gain-db N] [--json out.json]
 | **Rates** | mix and bed at 48 kHz; VO stem at 48 kHz *or* a known TTS-native rate; delivered rates agree |
 | **Loudness** | mix within ±2.0 LU of −18.0; dialogue 8–20 LU above the bed |
 | **Video** | the dub carries **both** a video and an audio track; frames intact; duration matches |
-| **Caption** | the semantic intermediate reached the manifest and is non-empty |
+| **Caption** | the semantic intermediate reached the manifest and is non-empty, and — with `--scene` — claims as many people as the contract says are visible |
 
 ### The bed meter needs its gain
 
@@ -59,6 +59,25 @@ fxdub-receipt runs/my-run --bed-gain-db -12
 EBU R128 integrated loudness gates a quiet bed out of the mix master entirely, so
 ducking depth is unmeasurable without a meter on the bed *stem* — and that stem
 reads pre-gain. Pass the mix gain you applied, or the separation figure is wrong.
+
+### The caption is not decoration
+
+```bash
+fxdub-receipt runs/my-run --scene docs/scenes/night-street.json
+```
+
+The pipeline captions a frame and that caption feeds the audio prompt. Nothing
+ever compared it back to the picture — so a captioner that wrote *"two men
+standing in a city at night, facing each other"* over a **one-man** shot rode
+through an entire delivered run green.
+
+`--scene` closes that. The check counts the people the caption claims and compares
+it against the cast members the contract marks `on_frame`. It is deliberately
+shallow: it reads `"<count> <person-word>"` and nothing cleverer, and it stays
+silent when the caption never counts people, because silence is not a claim.
+
+A package with no dependencies cannot look at pixels. It does not have to — the
+contract already states who is in the shot.
 
 ## Gain-stage from the meter, never from memory
 

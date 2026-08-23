@@ -40,12 +40,13 @@ fxdub-dialogue <scene.json> <words.json> [--only-speaker NAME] [--json OUT] [--d
 ## fxdub-receipt
 
 ```
-fxdub-receipt <run_dir> [--bed-gain-db N] [--json OUT] [--debug]
+fxdub-receipt <run_dir> [--scene SCENE.json] [--bed-gain-db N] [--json OUT] [--debug]
 ```
 
 | Argument | Meaning |
 |---|---|
 | `run_dir` | Directory holding the downloaded artifacts. |
+| `--scene SCENE.json` | Scene contract. Enables the caption-vs-cast check. Omitted, that check is skipped. |
 | `--bed-gain-db N` | Mix gain applied to the bed, in dB. Required for a correct ducking figure. Default `-9.0`. |
 | `--json OUT` | Write the full receipt. |
 

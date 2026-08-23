@@ -4,6 +4,89 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] — 2026-08-23
+
+### Added
+
+- **`fxdub-receipt --scene` and the `caption:person_count_matches_cast` check.**
+  The pipeline captions a frame and feeds that caption to the audio prompt, and
+  nothing ever compared it back to the picture. On the delivered run the captioner
+  wrote *"two men standing in a city at night, facing each other"* over a **one-man**
+  shot — and it rode through green, because no audio check can see a picture.
+
+  A zero-dependency package cannot look at pixels. It does not have to: the scene
+  contract already states who is visible. The check counts the people the caption
+  claims and compares that against the cast members marked `on_frame`. It is
+  deliberately shallow — it reads `"<count> <person-word>"` and nothing cleverer —
+  and it stays silent when the caption never counts people, because silence is not
+  a claim. The delivered run now scores **19/20** and exits 1. That is a finding,
+  not a regression.
+
+- **`cast` entries in a scene script are read, not just documented.** `on_frame`
+  declares who is visible; `face: {frame, x, y}` carries the pixel coordinates that
+  pin lip-sync to a named character. A plain-string cast entry still works — it is
+  scanned for `on-frame` / `off-frame`, which the night-street contract already
+  carried before the field existed.
+
+- **Picture-stage graph builders in `fxdub.vo_graphs`:** `load_video`,
+  `place_exact`, `lipsync`, `mux`, `frames`, and `mix_dialogue_anchored`.
+
+  These exist for the reason the module exists at all. Its docstring records that
+  v2.3–v2.7 were lost because they were hand-typed API JSON in a chat window, and
+  that session 4 repeated the mistake about fifteen times. Session 5 then did it
+  again — through an entire paid run — and only noticed on opening the file and
+  finding `place()` and `mix()` already there. A graph you cannot rebuild is an
+  anecdote.
+
+- **Three API detectors** behind those builders:
+  - `api_lipsync_unpinned_speaker` — `speaker_selection` defaults to *let the model
+    decide*. Left unpinned, the job completes, returns a correctly-framed MP4 at the
+    right duration, and **passes every container check** with the wrong person's
+    mouth moving. This is the container-metrics-cannot-see-content trap arriving in
+    the visual domain, where there is no receipt yet.
+  - `api_lipsync_resizing_sync_mode` — `bounce`/`loop`/`remap` resize the output to
+    the audio length; `remap` time-stretches the picture. Only `silence` leaves the
+    delivered duration alone.
+  - `api_savevideo_codec_encoding` — `SaveVideo.codec.encoding` crashes local
+    pre-flight with `candidate.toLowerCase is not a function` and **no verdict at
+    all**, because its options are objects rather than strings.
+
+- `broken` joins the node-status vocabulary. It was needed twice over, and
+  `AudioPad`'s row still read `reported`/Class B long after it had been measured
+  failing.
+
+### Fixed
+
+- **`HANDOFF.md` named the wrong MAC take as the delivered one.** Both keys were
+  loaded and decoded: `37d38cda…` is 3.624 s, `d7ba748c…` is 1.415 s, and the
+  delivered mix carries MAC speaking ~1.68 s. Neither is the shipped artifact. The
+  provenance table no longer claims otherwise; recovering the real key needs the
+  job history.
+
+### Measured
+
+Recorded in `kb/fxdub.db` (traps **65 → 86**, runs **22 → 32**, nodes **40 → 46**):
+
+- **`AudioMix` gains clamp to −24…+6 dB.** The recorded mix recipe of "VO +7 dB"
+  could never have come from the bus — it is an `AudioAdjustVolume` node ahead of
+  it. Rebuilt that way, the mix came back **byte-identical** to the delivered one
+  by FLAC STREAMINFO md5. A recipe that names a gain without naming the node that
+  applies it is not reproducible.
+- **`AudioVideoCombine` is broken on Comfy Cloud** (`ImportError: TorchCodec`),
+  joining `AudioPad`. Mux via `GetVideoComponents → VHS_VideoCombine` instead.
+- **Lip-sync re-times the picture** — 161 frames at 16 fps in, 473 at ~47 fps out —
+  but `GetVideoComponents` decodes at the source cadence, so the mux round-trip
+  hands 161 frames back. Assert frame count on the **deliverable**, never on the
+  raw sync output.
+- **`ImageFromBatch` clamps an out-of-range index silently** to the last frame, and
+  `GetVideoComponents` decodes at the source rate regardless of the container.
+  Reading a *named* frame can therefore return a different one with no error.
+- A node's schema can differ between two tool surfaces reading the same live
+  catalog. Ours returns nine required inputs for the lip-sync node with five
+  conditional sub-fields; another returns four and carries no `input_details` at
+  all. Round 11 taught *advertised ≠ runtime*; this teaches **advertised ≠
+  advertised** — read from a second surface before concluding a field is absent.
+
 ## [1.0.1] — 2026-08-22
 
 ### Fixed

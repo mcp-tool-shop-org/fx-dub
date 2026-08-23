@@ -40,7 +40,7 @@ Questo errore è reale. Un modello in modalità `audio reference` ha riprodotto 
 
 | | Verifiche | Rilevamenti |
 |---|---|---|
-| **`fxdub-receipt`** | set di file da consegnare, master a 48 kHz, livello di loudness EBU R128, profondità di attenuazione del dialogo rispetto alla traccia di sottofondo, MP4 rimuxato che contiene **entrambe** le tracce, fotogrammi intatti | doppiaggio silenzioso, doppiaggio troncato, dialogo sommerso nella traccia di sottofondo, mix che non raggiunge l'obiettivo desiderato |
+| **`fxdub-receipt`** | set di elementi da consegnare, master a 48 kHz, livello sonoro EBU R128, profondità dell'attenuazione del dialogo rispetto al sottofondo musicale, l'MP4 rimuxato contiene **entrambe** le tracce, i fotogrammi sono intatti, **il numero di persone indicate nei sottotitoli corrisponde al cast**. | un doppiaggio senza audio, un doppiaggio troncato, il dialogo è sommerso nel sottofondo musicale, un mix che non ha raggiunto l'obiettivo prefissato, **un addetto ai sottotitoli che "vede" qualcuno in una scena dove non c'è**. |
 | **`fxdub-dialogue`** | tutte le battute del copione presenti e nell'ordine corretto, nessuna frase inventata, nessuna sovrapposizione tra i personaggi, nessuna interruzione a metà frase, una voce per personaggio, si adatta al clip | un modello che inventa frasi, un personaggio con una voce diversa rispetto alle registrazioni precedenti, una pausa che interrompe la battuta successiva, due personaggi fusi in un'unica voce |
 
 **Una verifica fallita è un risultato, non un bug nello strumento.** Segnalalo; non modificare mai la soglia per farlo risultare positivo. Ogni verifica cita lo standard o il difetto misurato a cui fa riferimento, in modo che tu possa discuterne sulla base delle prove.
@@ -52,6 +52,11 @@ La regia si trova nel copione, non nella mente del regista:
 ```json
 {
   "clip_duration_s": 10.062,
+  "cast": {
+    "VOICE": { "description": "off-frame, deep and gritty", "on_frame": false },
+    "MAC":   { "description": "on-frame, gritty, weary", "on_frame": true,
+               "face": { "frame": 60, "x": 348, "y": 122 } }
+  },
   "lines": [
     { "speaker": "VOICE", "text": "Hey, how's it going?" },
     { "speaker": "MAC",   "text": "Not bad. Can't complain.",
@@ -63,6 +68,8 @@ La regia si trova nel copione, non nella mente del regista:
 ```
 
 `max_gap_s` su quella riga spiega perché il verificatore rifiuta una registrazione che una soglia globale lascerebbe passare. La nota accanto indica perché il valore è 0,15 e non un altro.
+
+`on_frame` è ciò che consente a un pacchetto senza informazioni visive di rilevare un difetto nei sottotitoli. Passa `--scene` a `fxdub-receipt` e confronta il numero di persone indicate dai sottotitoli con il numero dichiarato nel contratto come presenti nella scena. Nella versione consegnata, questo controllo fallisce: l'addetto ai sottotitoli ha scritto *"due uomini... uno di fronte all'altro"* in una scena con un solo personaggio, e questo è ciò che alimenta il prompt audio.
 
 `--only-speaker MAC` restringe il contratto a un singolo personaggio, ed è così che si verifica una **traccia per personaggio**: dovrebbe contenere le battute di quel personaggio e *silenzio* quando parlano gli altri. Verificare una traccia rispetto all'intera scena nasconde esattamente il bug descritto sopra.
 
@@ -79,12 +86,13 @@ graph = vo_graphs.transcribe("<storage-key>.flac", "run/words")
 
 ## Generatori di grafici
 
-`fxdub.vo_graphs` crea anche i grafici della fase VO: progettazione vocale, riferimento audio con lo stesso motore, clonazione e sintesi vocale, unione, inserimento nella timeline, mixaggio. Esistono perché l'alternativa — digitare manualmente il JSON dell'API in una finestra di chat — produce grafici che scompaiono alla fine della sessione e reintroducono silenziosamente difetti per i quali si è già pagato.
+`fxdub.vo_graphs` crea anche i grafici per la fase della voce fuori campo: progettazione vocale, riferimento audio con lo stesso motore, clonazione e sintesi vocale, montaggio, inserimento nella timeline, mixaggio — e la fase dell'immagine: estrazione dei fotogrammi, sincronizzazione labiale e mux. Esistono perché l'alternativa — digitare manualmente il JSON API in una finestra di chat — produce grafici che scompaiono con la sessione e reintroducono silenziosamente difetti per i quali si è già pagato.
 
 Ogni generatore viene controllato dai rilevatori di errori del repository, quindi le configurazioni che causano veri e propri fallimenti non possono essere create accidentalmente. Due esempi di ciò che questo codifica:
 
-- L'input "auto-grow" del nodo clone di ElevenLabs è indirizzato come `files.audio0` in fase di esecuzione — **non** il `files.item_1` che il suo schema pubblicizza — e un test preliminare accetta il nome errato senza segnalarlo.
-- Il parametro `pitch_rate` di ByteDance è globale per il nodo, quindi un singolo nodo non può dare voce a due personaggi con altezze diverse. I suoi timestamp fanno riferimento a una timeline di output assoluta, quindi la soluzione consiste in un passaggio per personaggio, sovrapposto.
+- L'input "auto-grow" del nodo clone di ElevenLabs viene indirizzato come `files.audio0` in fase di esecuzione — **non** come `files.item_1`, come indicato nel suo schema — e un test preliminare accetta il nome errato senza problemi.
+- Il parametro `pitch_rate` di ByteDance è globale per tutti i nodi, quindi un singolo nodo non può dare voce a due personaggi con altezze diverse. I suoi timestamp si riferiscono a una timeline di output assoluta, quindi la correzione consiste in un passaggio per ogni personaggio, sovrapposti.
+- Il parametro `speaker_selection` del nodo di sincronizzazione labiale ha come valore predefinito *lascia che sia il modello a decidere*. Se lo lasci non bloccato, il processo viene completato, restituisce un MP4 con i fotogrammi corretti e della durata giusta e supera tutti i controlli del contenitore — ma la bocca della persona sbagliata si muove. Il builder fissa le coordinate; il detector fa fallire il grafico che non lo fa.
 
 Creare un grafico è una funzione pura che prende gli argomenti e restituisce un `dict`. **Niente in questo pacchetto invia, carica o spende.**
 
@@ -130,6 +138,11 @@ video ─► describe (Florence-2, pinned, single mid-clip frame)
                                    │ mix.flac + LUFS manifests
                                    ▼
                         re-mux ─► dubbed.mp4
+                                   │
+                       (optional)  ▼
+                    lip-sync ─► sync one named face to that
+                                character's own track, then
+                                re-mux the full mix back over it
 ```
 
 > **"Re-mux"** = re-multiplex: la traccia audio finale viene riscritta nel contenitore video, senza alterare i pixel. Non è un errore di battitura per "remix": il mixaggio avviene in una fase precedente; questa è la fase che ti fornisce un `dubbed.mp4` riproducibile.
@@ -138,15 +151,18 @@ video ─► describe (Florence-2, pinned, single mid-clip frame)
 
 ## Cosa c'è di onesto in questo progetto
 
-- **Le didascalie trasmettono significato, non tempistiche.** Una pipeline basata sulle didascalie è adatta per ambienti e dialoghi; non sincronizzerà mai il suono di una porta che sbatte solo con la prosa. Per ottenere un impatto maggiore, sono necessarie delle tempistiche precise, ovvero una sequenza temporale degli eventi: la [Knowledge Base](docs/knowledge-base.md#stage-2b--direct-videoaudio-the-sync-first-alternative) mappa i modelli diretti video→audio che lo fanno in modo nativo e le relative licenze.
-- **Una descrizione di una scena non è una sceneggiatura.** Scrivi le parole che i tuoi personaggi pronunciano; la pipeline fa sì che suonino correttamente.
-- **L'identità vocale non è gratuita.** Le voci create tramite prompt non sono deterministiche, *indipendentemente dal seed* — una voce che approvi non può essere richiamata eseguendo nuovamente lo stesso prompt. Definisci le voci una sola volta, conserva l'audio approvato e poi utilizzalo o modificalo in seguito. La clonazione tra diversi motori non preserva nemmeno l'identità. Questa è la lezione più costosa presente nel registro delle insidie del repository e il controllo `one_voice_per_character` serve a garantire che questa lezione venga appresa.
-- **I valori numerici per il mix derivano da standard e studi sull'ascolto** (BS.1770-5, AES TD1008, ricerca sul ducking JAES), non da impressioni soggettive; sono delle manopole perché le preferenze differiscono in modo misurabile.
-- **La governance è una funzionalità.** Non clonare la voce di una persona reale senza il suo consenso. Il discorso sintetico pubblicato nell'UE comporta un obbligo di marcatura leggibile dalla macchina ai sensi dell'articolo 50; il file JSON di ricevuta è progettato per far parte di tale traccia di provenienza e la [sezione sulla pubblicazione della Knowledge Base](docs/knowledge-base.md#publishing--governance-read-before-you-ship-a-dubbed-video) ti indica quali informazioni devi divulgare nel luogo in cui pubblichi. Non utilizzare pacchetti vocali specifici per persone, mai. Né per le chiamate automatiche.
+- **I sottotitoli trasmettono significato, non tempistiche.** Una pipeline basata sui sottotitoli è adatta per l'ambientazione e i dialoghi; non sincronizzerà mai un rumore di porta solo con la prosa. Per una tempistica che influisce sull'impatto, è necessaria una timeline degli eventi: il [Knowledge Base](docs/knowledge-base.md#stage-2b--direct-videoaudio-the-sync-first-alternative) mappa i modelli diretti video→audio che lo fanno nativamente e le loro licenze.
+- **Una descrizione della scena non è una sceneggiatura.** Scrivi le parole che i tuoi personaggi dicono; la pipeline fa in modo che suonino bene.
+- **L'identità vocale non è gratuita.** Le voci progettate tramite prompt sono non deterministiche *indipendentemente dal seed* — una voce che approvi non può essere richiamata eseguendo nuovamente lo stesso prompt. Definisci il cast una volta, conserva l'audio approvato e poi usalo come riferimento o inseriscilo per sempre. La clonazione tra motori diversi non preserva nemmeno l'identità. Questa è la lezione più costosa nel registro delle insidie del repository, e il controllo `one_voice_per_character` del verificatore serve a mantenerla presente.
+- **La sincronizzazione labiale gestisce un solo volto, quindi ha bisogno della traccia di un solo personaggio.** Forniscigli il mix e farà muovere la bocca per ogni frase — comprese quelle che appartengono a qualcuno che non è nella scena — e supererà comunque tutti i controlli audio, perché l'audio non è mai cambiato. Forniscigli una traccia per ogni personaggio e il silenzio diventerà la performance corretta: il personaggio ascolta. I risultati sono non deterministici *indipendentemente dal seed*, quindi un take approvato viene conservato e non viene più renderizzato. Il nodo ritarda anche l'immagine; verifica il numero di fotogrammi nell'elemento da consegnare, non nel suo output grezzo.
+- **I numeri del mix derivano dagli standard e dagli studi sull'ascolto** (BS.1770-5, AES TD1008, ricerca sulla modulazione del volume JAES), non dalle sensazioni — e sono manopole perché le preferenze differiscono in modo misurabile.
+- **La governance è una funzionalità.** Non clonare la voce di una persona reale senza il suo consenso. Il discorso sintetico pubblicato nell'UE comporta un obbligo di marcatura leggibile dalla macchina ai sensi dell'articolo 50; il JSON della ricevuta è progettato per far parte di tale traccia di provenienza, e la [sezione sulla pubblicazione del KB](docs/knowledge-base.md#publishing--governance-read-before-you-ship-a-dubbed-video) ti indica quali informazioni devi divulgare dove pubblichi il contenuto. Non utilizzare pacchetti vocali specifici per persona, mai. Non per le chiamate automatiche.
 
 ## Stato
 
-**v1.0.0: la pipeline è stata implementata e entrambe le ricevute sono positive.** Una scena notturna con due personaggi ottiene un punteggio di **19/19** nel contratto del contenitore (48 kHz, −18.09 LUFS, dialogo +11.17 LU rispetto al livello di riferimento, 161 fotogrammi intatti, 10.069 s) e **11/11** nel contratto dei contenuti. 167 test, CI positivo. Cronologia completa in [CHANGELOG](CHANGELOG.md).
+**v1.1.0 — la pipeline viene consegnata, entrambe le ricevute sono verdi e l'immagine è sincronizzata con i movimenti delle labbra.** Una scena notturna con due personaggi ottiene un punteggio di **19/19** nel contratto del contenitore (48 kHz, −18.09 LUFS, dialogo +11.17 LU rispetto al sottofondo musicale, 161 fotogrammi intatti, 10.069 s) e **11/11** nel contratto dei contenuti. La variante sincronizzata con i movimenti delle labbra mantiene lo stesso contratto — 832 × 480, 161 fotogrammi, entrambe le tracce — con la bocca di MAC che si muove quando parla e chiusa quando il personaggio fuori campo parla.
+
+Ottiene un punteggio di **19/20** una volta superato il controllo `--scene`, e l'errore è reale: nella versione consegnata, i sottotitoli indicano due uomini in una scena con un solo personaggio. Questo controllo è nuovo in questa versione e ha rilevato un difetto che era stato precedentemente ignorato. 189 test, CI verde. Cronologia completa nel [CHANGELOG](CHANGELOG.md).
 
 | Elemento | Stato |
 |---|---|

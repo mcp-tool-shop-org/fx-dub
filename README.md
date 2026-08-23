@@ -47,7 +47,7 @@ men talking over each other. Sample rate: perfect. Duration: perfect.
 
 | | Checks | Catches |
 |---|---|---|
-| **`fxdub-receipt`** | deliverable set, 48 kHz masters, EBU R128 loudness, dialogue-to-bed ducking depth, re-muxed MP4 carries **both** tracks, frames intact | a silent dub, a truncated dub, dialogue buried in the bed, a mix that missed its target |
+| **`fxdub-receipt`** | deliverable set, 48 kHz masters, EBU R128 loudness, dialogue-to-bed ducking depth, re-muxed MP4 carries **both** tracks, frames intact, **the caption's person count against the cast** | a silent dub, a truncated dub, dialogue buried in the bed, a mix that missed its target, **a captioner hallucinating someone into the shot** |
 | **`fxdub-dialogue`** | every scripted line present and in order, no invented speech, no cross-character overlap, no mid-line straggle, one voice per character, fits the clip | a model inventing lines, a character re-cast between renders, a pause that eats the next cue, two characters collapsed into one voice |
 
 **A failing check is a finding, not a bug in the tool.** Report it; never tune the
@@ -61,6 +61,11 @@ Direction lives in the script, not in an agent's head:
 ```json
 {
   "clip_duration_s": 10.062,
+  "cast": {
+    "VOICE": { "description": "off-frame, deep and gritty", "on_frame": false },
+    "MAC":   { "description": "on-frame, gritty, weary", "on_frame": true,
+               "face": { "frame": 60, "x": 348, "y": 122 } }
+  },
   "lines": [
     { "speaker": "VOICE", "text": "Hey, how's it going?" },
     { "speaker": "MAC",   "text": "Not bad. Can't complain.",
@@ -74,6 +79,12 @@ Direction lives in the script, not in an agent's head:
 `max_gap_s` on that line is why the verifier rejects a take a global threshold
 would wave through. The note beside it is why the number is 0.15 and not something
 else.
+
+`on_frame` is what lets a package with no eyes catch a caption defect. Pass
+`--scene` to `fxdub-receipt` and it compares the number of people the caption
+*claims* against the number the contract declares visible. On the delivered run
+that check fails: the captioner wrote *"two men … facing each other"* over a
+one-man shot, and that caption is what feeds the audio prompt.
 
 `--only-speaker MAC` narrows the contract to one character, which is how you check
 a **per-character stem**: it should carry that character's lines and *silence*
@@ -96,9 +107,10 @@ graph = vo_graphs.transcribe("<storage-key>.flac", "run/words")
 ## Graph builders
 
 `fxdub.vo_graphs` also builds the VO-stage graphs: voice design, same-engine audio
-reference, clone-and-speak, splice, place-on-timeline, mix. They exist because the
-alternative — hand-typing API JSON into a chat window — produces graphs that vanish
-with the session and quietly reintroduce defects already paid for once.
+reference, clone-and-speak, splice, place-on-timeline, mix — and the picture stage:
+frame extract, lip-sync, and mux. They exist because the alternative — hand-typing
+API JSON into a chat window — produces graphs that vanish with the session and
+quietly reintroduce defects already paid for once.
 
 Every builder is linted by the repo's trap detectors, so the shapes that cost real
 failed jobs cannot be re-authored by accident. Two examples of what that encodes:
@@ -109,6 +121,10 @@ failed jobs cannot be re-authored by accident. Two examples of what that encodes
 - ByteDance's `pitch_rate` is node-global, so one node cannot voice two characters
   at different pitches. Its timestamps address an absolute output timeline, so the
   fix is one pass per character, layered.
+- The lip-sync node's `speaker_selection` defaults to *let the model decide*. Leave
+  it unpinned and the job completes, returns a correctly-framed MP4 at the right
+  duration, and passes every container check — with the wrong person's mouth
+  moving. The builder pins coordinates; the detector fails the graph that doesn't.
 
 Building a graph is a pure function from arguments to a `dict`. **Nothing in this
 package submits, uploads, or spends.**
@@ -163,6 +179,11 @@ video ─► describe (Florence-2, pinned, single mid-clip frame)
                                    │ mix.flac + LUFS manifests
                                    ▼
                         re-mux ─► dubbed.mp4
+                                   │
+                       (optional)  ▼
+                    lip-sync ─► sync one named face to that
+                                character's own track, then
+                                re-mux the full mix back over it
 ```
 
 > **"Re-mux"** = re-multiplex: the finished soundtrack is written back into the
@@ -189,6 +210,13 @@ dialogue by 7 dB while every other check stayed green.
   forever after. Cross-engine cloning does not preserve identity either. This is
   the most expensive lesson in the repo's trap ledger, and the verifier's
   `one_voice_per_character` check is how it stays learned.
+- **Lip-sync drives one face, so it needs one character's track.** Feed it the mix
+  and it will mouth every line — including the ones belonging to someone who is not
+  in the shot — and still pass every audio check, because the audio never changed.
+  Feed it a per-character track and silence becomes the correct performance: the
+  character listens. Results are non-deterministic *regardless of seed*, so an
+  approved take is kept, never re-rendered. The node also re-times the picture;
+  assert frame count on the deliverable, not on its raw output.
 - **Mix numbers come from standards and listening studies** (BS.1770-5,
   AES TD1008, JAES ducking research), not vibes — and they're knobs, because
   preferences measurably differ.
@@ -202,17 +230,24 @@ dialogue by 7 dB while every other check stayed green.
 
 ## Status
 
-**v1.0.0 — the pipeline is delivered and both receipts are green.** A two-character
-night-street scene scores **19/19** on the container contract (48 kHz, −18.09 LUFS,
-dialogue +11.17 LU over the bed, 161 frames intact, 10.069 s) and **11/11** on the
-content contract. 167 tests, CI green. Full history in the [CHANGELOG](CHANGELOG.md).
+**v1.1.0 — the pipeline is delivered, both receipts are green, and the picture is
+lip-synced.** A two-character night-street scene scores **19/19** on the container
+contract (48 kHz, −18.09 LUFS, dialogue +11.17 LU over the bed, 161 frames intact,
+10.069 s) and **11/11** on the content contract. The lip-synced variant holds the
+same contract — 832 × 480, 161 frames, both tracks — with MAC's mouth on his line
+and closed while the off-frame character speaks.
+
+It scores **19/20** once you pass `--scene`, and the failure is real: the delivered
+run's caption claims two men over a one-man shot. That check is new in this release
+and it caught a defect that had been shipping green. 189 tests, CI green. Full
+history in the [CHANGELOG](CHANGELOG.md).
 
 | Piece | State |
 |---|---|
 | [Handbook](https://mcp-tool-shop-org.github.io/fx-dub/handbook/) — install, usage, scene scripts, graph builders, verification | ✅ |
 | [Design rationale](docs/design/2026-08-21-fxdub-v1.dispatch.md) — 45 sourced findings behind every default | ✅ citations externally verified ([record](docs/design/2026-08-21-fxdub-v1.dispatch.verify.md), Ed25519 receipt in-repo) |
 | [Knowledge Base](docs/knowledge-base.md) — every option, honest licences, measured costs | ✅ |
-| [Agent onboarding](AGENTS.md) + project database ([kb/fxdub.db](kb/README.md)) — nodes, models, runs, **65 measured traps**, decisions | ✅ live; rebuilt each session |
+| [Agent onboarding](AGENTS.md) + project database ([kb/fxdub.db](kb/README.md)) — nodes, models, runs, **86 measured traps**, decisions | ✅ live; rebuilt each session |
 | Spot-effects event timeline · local-GPU lane | ⏳ roadmap |
 
 ## For agents and LLMs

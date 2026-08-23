@@ -38,7 +38,7 @@ transcript. That gap is the whole product.
 
 | Tool | Answers |
 |---|---|
-| [`fxdub-receipt`](./verifying/#the-container-receipt) | Are the masters, the loudness, the ducking depth and the re-muxed video correct? |
+| [`fxdub-receipt`](./verifying/#the-container-receipt) | Are the masters, the loudness, the ducking depth and the re-muxed video correct — and does the caption describe the shot it came from? |
 | [`fxdub-dialogue`](./verifying/#the-content-receipt) | Did it say the right words, in the right voices, at the right times? |
 
 Both exit non-zero on failure, so they gate a pipeline rather than decorate it.

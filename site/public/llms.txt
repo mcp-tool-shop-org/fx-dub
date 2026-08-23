@@ -18,6 +18,9 @@ while also:
 - rendering two characters in one voice (pitch and delivery knobs are often
   node-global, not per-speaker)
 - holding a multi-second silence mid-sentence that runs into the next cue
+- captioning two people into a one-person shot, when that caption is what feeds the
+  audio prompt
+- lip-syncing the wrong face, because the node picks one on its own unless told
 
 None of those are visible to sample rate or duration. All are trivially visible to
 a word-level diarized transcript checked against an authored scene script.
@@ -30,8 +33,9 @@ pip install fx-dub
 # what was actually said, against the scene contract
 fxdub-dialogue scene.json words.json --only-speaker VOICE
 
-# the container: masters, loudness, ducking depth, re-muxed video
-fxdub-receipt runs/my-run --bed-gain-db -12 --json receipt.json
+# the container: masters, loudness, ducking depth, re-muxed video,
+# and whether the caption describes the shot it came from
+fxdub-receipt runs/my-run --scene scene.json --bed-gain-db -12 --json receipt.json
 ```
 
 Exit codes: `0` pass · `1` the audio failed its contract (read the receipt) ·
@@ -89,10 +93,13 @@ graph for one.
 
 - `fxdub.dialogue_receipt.check_dialogue(scene, words, only_speaker=None)` — the
   content contract; returns `{"checks": [...], "measured": {...}}`
-- `fxdub.audition_receipt.check_run(run_dir, bed_gain_db)` — the container contract
+- `fxdub.audition_receipt.check_run(run_dir, bed_gain_db, scene=None)` — the container
+  contract. Pass `scene` to compare the caption's person count against the cast members
+  the contract marks `on_frame`
 - `fxdub.media_probe` — FLAC `STREAMINFO` and MP4 atom parsing, standard library only
-- `fxdub.vo_graphs` — builders for ComfyUI VO-stage graphs. Pure functions to a
-  `dict`; **nothing in this package submits, uploads, or spends**
+- `fxdub.vo_graphs` — builders for ComfyUI VO-stage graphs *and* the picture stage
+  (`frames`, `lipsync`, `mux`, `place_exact`, `mix_dialogue_anchored`). Pure functions
+  to a `dict`; **nothing in this package submits, uploads, or spends**
 
 ## Docs
 

@@ -39,6 +39,11 @@ from fxdub import vo_graphs
 | `place(storage_key, at_seconds, prefix)` | put a clip on a timeline behind generated silence |
 | `mix(key_a, key_b, prefix, gain_a_db, gain_b_db)` | overlay two tracks |
 | `transcribe(storage_key, prefix)` | word-level diarized transcript — the input to `fxdub-dialogue` |
+| `place_exact(storage_key, at_seconds, clip_seconds, total_seconds, prefix)` | as `place`, plus a tail, so the result is *exactly* `total_seconds` long |
+| `mix_dialogue_anchored(bed_key, vo_key, prefix, vo_gain_db, bed_gain_db)` | the delivered mix shape — bed on the bus, VO boosted ahead of it |
+| `frames(video_key, prefix, indices)` | decode-only frame extract |
+| `lipsync(video_key, audio_key, prefix, speaker_x, speaker_y, ...)` | re-sync one named face to a per-character track |
+| `mux(video_key, audio_key, prefix)` | lay an audio track over a video |
 
 Cloud audio is addressed by **storage key**: any saved output can be reloaded by
 its content hash, which is what makes re-mixing free and deterministic.
