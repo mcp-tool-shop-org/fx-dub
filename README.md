@@ -230,7 +230,7 @@ dialogue by 7 dB while every other check stayed green.
 
 ## Status
 
-**v1.1.0 — the pipeline is delivered, both receipts are green, and the picture is
+**v1.1.1 — the pipeline is delivered, both receipts are green, and the picture is
 lip-synced.** A two-character night-street scene scores **19/19** on the container
 contract (48 kHz, −18.09 LUFS, dialogue +11.17 LU over the bed, 161 frames intact,
 10.069 s) and **11/11** on the content contract. The lip-synced variant holds the

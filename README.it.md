@@ -160,7 +160,7 @@ video ─► describe (Florence-2, pinned, single mid-clip frame)
 
 ## Stato
 
-**v1.1.0 — la pipeline viene consegnata, entrambi i file di ricevuta sono verdi e l'immagine è sincronizzata con il labiale.** Una scena notturna con due personaggi ottiene un punteggio di **19/19** nel contratto del contenitore (48 kHz, −18.09 LUFS, dialogo +11.17 LU rispetto al sottofondo musicale, 161 fotogrammi intatti, 10.069 s) e **11/11** nel contratto dei contenuti. La variante con la sincronizzazione labiale mantiene lo stesso contratto — 832 × 480, 161 fotogrammi, entrambe le tracce — con la bocca di MAC che si muove quando parla e rimane chiusa mentre il personaggio fuori campo parla.
+**v1.1.1: la sequenza è completa, entrambi i canali audio sono a livelli ottimali e l’immagine è sincronizzata con il suono.** Una scena notturna con due personaggi ambientata in una strada ottiene un punteggio di **19/19** nel test del contenitore (48 kHz, −18.09 LUFS, dialogo +11.17 LU sopra la colonna sonora, 161 fotogrammi intatti, 10,069 s) e di **11/11** nel test dei contenuti. La variante con il labiale sincronizzato mantiene le stesse caratteristiche: 832 × 480, 161 fotogrammi, entrambi i canali audio; la bocca del personaggio MAC è visibile mentre parla e chiusa quando non compare nell’inquadratura.
 
 Ottiene un punteggio di **19/20** una volta superato il controllo `--scene`, e l'errore è reale: nel file consegnato, i sottotitoli indicano due uomini in una scena con un solo personaggio. Questo controllo è nuovo in questa versione e ha rilevato un difetto che era stato precedentemente considerato corretto. 197 test, CI verde. Cronologia completa nel [CHANGELOG](CHANGELOG.md).
 

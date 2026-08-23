@@ -65,6 +65,10 @@ Rows carry `class` **A** (measured on-account: billing feed, API pulls, decoded 
 
 ## Where things stand (2026-08-22 end of session 4)
 
+- **A MODEL'S OUTPUT IS EVIDENCE, NOT A MEASUREMENT.** Session 5 read diarized word timings as a measurement of a clip's *extent* and used it to contradict a byte-level fact, then published the contradiction into the handoff, a relayed brief, a released CHANGELOG and this DB before testing it. The clip truly spanned 2.300-3.715 s; the diarizer ran 0.244 s late at the tail. **Word timings gate CONTENT (order, overlap, gaps) and cannot establish EXTENT** - for extent, decode the file. FLAC carries an md5 of the decoded audio in `STREAMINFO` bytes 18-34: free, exact, no decoder, and strictly better than the duration match that misled us.
+
+- **READ A NODE FROM A SECOND SURFACE** before concluding a field is absent. Our `get_node` returns nine required inputs for `SyncLipSyncNode` with five conditional `model.*` sub-fields; the in-app agent's surface returns four and carries no `input_details` at all, for any node. Round 11 taught *advertised != runtime*; this teaches **advertised != advertised**.
+
 - **THE DUB IS DELIVERED AND ACCEPTED.** `runs/2026-08-22-v28-bytedance/` scores **19/19**: 48 kHz mix at −18.09 LUFS, dialogue **+11.17 LU** over the bed, 161 frames intact, 10.069 s, caption present. Both voices approved by ear.
 - **THE VOICE PROBLEM IS CLOSED.** The off-frame man is ByteDance Seed Audio voice-design (pitch −3, cast take `0597c19d…`) re-spoken through **same-engine audio reference**; MAC is ByteDance with an acoustic grit brief, spliced to close a 1.880 s mid-line pause. Neither character was re-rolled after approval — that rule is now load-bearing (see the lesson below).
 - **THE MISSING VERIFIER NOW EXISTS.** `tools/dialogue_receipt.py` checks *spoken content* against `docs/scenes/*.json` from a diarized transcript: lines present and ordered, no invented speech, no cross-character overlap, no mid-line straggle, consistent casting, fits the clip. **`audition_receipt.py` cannot see any of that** — it passed green on two takes the Director rejected within seconds. Run BOTH.

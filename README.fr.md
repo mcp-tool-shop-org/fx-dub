@@ -183,8 +183,7 @@ vous indique quelles informations vous devez divulguer en fonction du lieu où v
 
 ## État
 
-**v1.1.0 : le pipeline est livré, les deux données de vérification sont valides et l’image est synchronisée avec la voix.** Une scène nocturne à deux personnages obtient un score de **19/19** sur le contrat du conteneur (48 kHz, −18,09 LUFS, dialogue +11,17 LU par rapport au fond sonore, 161 images intactes,
-10,069 s) et un score de **11/11** sur le contrat du contenu. La variante synchronisée avec la voix conserve le même contrat (832 × 480, 161 images, les deux pistes), avec la bouche de MAC qui bouge lorsqu’il parle et qui est fermée lorsque le personnage hors champ parle.
+**v1.1.1 – la séquence est terminée, les deux flux sont validés (indiqués en vert) et l’image est synchronisée avec le son.** Une scène nocturne avec deux personnages obtient un score de **19/19** pour le contrat du conteneur (48 kHz, −18,09 LUFS, dialogue +11,17 LU au-dessus de la musique d’ambiance, 161 images intactes, 10,069 s) et **11/11** pour le contrat du contenu. La variante synchronisée conserve les mêmes paramètres : 832 × 480, 161 images, les deux pistes audio ; la bouche de MAC est visible lorsqu’il parle et fermée lorsque le personnage hors champ prend la parole.
 
 Elle obtient un score de **19/20** une fois que vous passez `--scene`, et l’échec est réel : les sous-titres du fichier livré indiquent la présence de deux hommes dans une scène où il n’y en a qu’un. Ce contrôle est nouveau dans cette version
 et il a détecté un défaut qui avait été validé auparavant. 189 tests, CI valide. Historique complet dans le [JOURNAL DES MODIFICATIONS](CHANGELOG.md).

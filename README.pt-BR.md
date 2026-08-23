@@ -160,7 +160,7 @@ video ─► describe (Florence-2, pinned, single mid-clip frame)
 
 ## Status
 
-**v1.1.0 — o pipeline é entregue, ambos os recibos estão verdes e a imagem está sincronizada com os lábios.** Uma cena noturna com dois personagens obtém **19/19** no contrato do contêiner (48 kHz, −18,09 LUFS, diálogo +11,17 LU acima do áudio de fundo, 161 quadros intactos, 10,069 s) e **11/11** no contrato de conteúdo. A variante sincronizada com os lábios mantém o mesmo contrato — 832 × 480, 161 quadros, ambas as faixas — com a boca do MAC em suas falas e fechada enquanto o personagem fora da cena fala.
+**v1.1.1 – o processo foi concluído, ambos os indicadores estão verdes e a imagem está sincronizada com o áudio.** Uma cena noturna com dois personagens, ambientada numa rua, obtém uma pontuação de **19/19** no contrato do recipiente (48 kHz, −18,09 LUFS, diálogo +11,17 LU sobreposto à música, 161 fotogramas intactos, 10,069 s) e **11/11** no contrato de conteúdo. A variante sincronizada mantém o mesmo contrato – 832 × 480, 161 fotogramas, ambas as faixas –, com a boca do personagem MAC alinhada com o seu diálogo e fechada enquanto o outro personagem, que não aparece em cena, fala.
 
 Ele obtém **19/20** depois que você passa `--scene`, e a falha é real: o arquivo entregue na execução atual contém duas pessoas em uma cena com apenas um personagem. Essa verificação é nova nesta versão e detectou um defeito que estava sendo aprovado anteriormente. 189 testes, CI verde. Histórico completo no [CHANGELOG](CHANGELOG.md).
 

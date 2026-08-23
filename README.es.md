@@ -160,7 +160,7 @@ video ─► describe (Florence-2, pinned, single mid-clip frame)
 
 ## Estado
 
-**v1.1.0: la cadena de procesamiento se entrega, ambos recibos están en verde y la imagen está sincronizada con los labios.** Una escena nocturna con dos personajes obtiene una puntuación de **19/19** en el contrato del contenedor (48 kHz, −18.09 LUFS, diálogo +11.17 LU sobre el fondo sonoro, 161 fotogramas intactos, 10.069 s) y **11/11** en el contrato de contenido. La variante sincronizada con los labios mantiene el mismo contrato: 832 × 480, 161 fotogramas, ambas pistas; la boca de MAC se mueve cuando dice su línea y está cerrada mientras el personaje que no aparece en pantalla habla.
+**v1.1.1: se entrega la secuencia completa, ambos indicadores están en verde y la imagen está sincronizada con el audio.** Una escena nocturna con dos personajes obtiene una puntuación de **19/19** en el contrato del contenedor (48 kHz, −18,09 LUFS, diálogo +11,17 LU sobre la banda sonora, 161 fotogramas intactos, 10,069 s) y **11/11** en el contrato de contenido. La variante sincronizada mantiene el mismo contrato: 832 × 480, 161 fotogramas, ambas pistas; la boca del personaje MAC está abierta mientras habla y cerrada cuando no lo hace.
 
 Obtiene una puntuación de **19/20** una vez que pasas `--scene`, y el fallo es real: el subtítulo de la versión entregada indica dos hombres en una escena con un solo hombre. Esta comprobación es nueva en esta versión y detectó un defecto que se había estado enviando como correcto. 197 pruebas, CI en verde. Historial completo en [CHANGELOG](CHANGELOG.md).
 

@@ -4,6 +4,42 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] — 2026-08-23
+
+### Fixed
+
+- **Retracted a false provenance finding published in 1.1.0.** The 1.1.0 notes claimed
+  `HANDOFF.md` named the wrong MAC take as the delivered one. It did not — the handoff
+  was right. Proven by byte-identity: `AudioMix(b7066f85…, place(d7ba748c…, 2.30 s))`
+  reproduces the assembled VO `8eadf234…` **exactly**, that VO at +7 dB reproduces the
+  delivered `stem_vo`, and that plus the bed at −12 dB reproduces the delivered mix.
+  The whole run rebuilds from three storage keys.
+
+  The error is worth more than the correction: diarized word timings were read as a
+  *measurement of a clip’s extent* and used to contradict a byte-level fact. They are a
+  transcription model’s boundary estimates — 0.021 s early at the head, 0.244 s late at
+  the tail. **Word timings gate content; they do not establish extent.** The 1.1.0 entry
+  is struck through rather than deleted, because the released notes carry it and hiding
+  the error destroys the evidence of how it was made.
+
+### Added
+
+- `SceneFlagContractTests` — `--scene` shipped in 1.1.0 with the `scene_unreadable` error
+  code and **no test coverage**, while the ship gate already claimed those codes were
+  covered. Five cases now assert it, including that *no* scene means the caption check is
+  **absent** rather than failing: a silently-skipped check that reads as a pass is the
+  worse failure mode.
+- `ZeroDependencyTests` — the empty runtime dependency list was enforced only in CI, so
+  `./verify.sh`, documented as the single local gate, would pass a change CI then
+  rejected. Enforced in both places now, and proven able to go red.
+
+### Changed
+
+- `SHIP_GATE.md` records **how** each behavioural skip was re-verified, so the next
+  release repeats the walk instead of re-deriving it. `SCORECARD.md` gains a v1.1.0
+  re-audit and no longer reads as current.
+- 189 → **197 tests**.
+
 ## [1.1.0] — 2026-08-23
 
 ### Added
