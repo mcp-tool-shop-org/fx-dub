@@ -10,7 +10,7 @@
 
 ## 0. Thirty seconds
 
-**fx-dub is finished and shipped.** The dub is delivered and accepted; the package is on PyPI; the site, handbook and knowledge base are live. Nothing is blocked and nothing is half-done.
+**fx-dub is finished and shipped.** The dub is delivered and accepted; **v1.1.0 is on PyPI**; the site, handbook and knowledge base are live. Session 5 added lip-sync in post, the caption-vs-cast check, and the picture-stage graph builders. Nothing is blocked and nothing is half-done.
 
 ```bash
 ./verify.sh          # the single gate: tests + build + install-smoke
@@ -19,7 +19,7 @@ python kb/build_db.py    # rebuild the project DB from seeds
 
 | | |
 |---|---|
-| Version | **v1.0.1** — [PyPI](https://pypi.org/project/fx-dub/) · [Releases](https://github.com/mcp-tool-shop-org/fx-dub/releases) |
+| Version | **v1.1.0** — [PyPI](https://pypi.org/project/fx-dub/) · [Releases](https://github.com/mcp-tool-shop-org/fx-dub/releases) |
 | Tests | **189**, CI green on 3.10 + 3.12 |
 | Traps recorded | **86** in `kb/fxdub.db` |
 | Site | https://mcp-tool-shop-org.github.io/fx-dub/ · [handbook](https://mcp-tool-shop-org.github.io/fx-dub/handbook/) · [llms.txt](https://mcp-tool-shop-org.github.io/fx-dub/llms.txt) |

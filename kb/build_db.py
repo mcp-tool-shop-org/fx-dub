@@ -256,6 +256,7 @@ DECISIONS = [
 ]
 
 NEXT_ACTIONS = [
+    ('SHIPPED 2026-08-23: fx-dub v1.1.0 published to PyPI via Trusted Publishing (OIDC, release workflow run 32635638295). Published wheel verified from the index: __version__ 1.1.0, --scene supported, caption check present, all six picture builders exported. CI green on main and on the tag; GitHub Pages redeployed and the new handbook sections are live. All seven translations regenerated on TranslateGemma 27B BEFORE the tag, so the release commit carries source and translations in step.', 'advisor session', 'done'),
     ("RESOLVED 2026-08-22: no upload was ever needed. The clip is already reachable as cloud asset ea68c5aa....mp4, byte-identical to the local fixture (confirmed via get_output + local probe). fx-dub v2.2's loader is CLEARED.", "Director", "done"),
     ("RESOLVED 2026-08-22: the PrimitiveFloat 16.0 -> VHS_VideoCombine.frame_rate link is VERIFIED present on input slot 4 of fx-dub v2.2 (link 718920623009028; api_format resolves to the link, not a literal). The round-6 deferred check is closed.", "advisor session", "done"),
     ("DONE 2026-08-22: round-10 brief relayed; turbo tab rebuilt and verified value-by-value against v2.2 — exactly three values differ (unet_name / steps 8 / cfg 1), matching the official template. Both graphs cleared to run.", "Director + advisor", "done"),
