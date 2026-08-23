@@ -4,6 +4,7 @@
 *.mp3
 *.mp4
 *.webm
+runs/**/*.png
 out/
 demos/
 node_modules/
