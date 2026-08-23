@@ -57,11 +57,20 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
-- **`HANDOFF.md` named the wrong MAC take as the delivered one.** Both keys were
-  loaded and decoded: `37d38cda…` is 3.624 s, `d7ba748c…` is 1.415 s, and the
-  delivered mix carries MAC speaking ~1.68 s. Neither is the shipped artifact. The
-  provenance table no longer claims otherwise; recovering the real key needs the
-  job history.
+- **~~`HANDOFF.md` named the wrong MAC take as the delivered one.~~ RETRACTED
+  2026-08-23 — the handoff was right and this entry was wrong.** Proven by
+  byte-identity after 1.1.0 shipped: `AudioMix(b7066f85…, place(d7ba748c…, 2.30 s))`
+  reproduces the assembled VO `8eadf234…` **exactly**, and that VO at +7 dB
+  reproduces the delivered `stem_vo`, which mixed with the bed at −12 dB reproduces
+  the delivered mix. There is no third key.
+
+  The error: diarized word timings put MAC at 2.279–3.959 s (~1.68 s), and that was
+  read as a *measurement* of the clip's extent and used to contradict a byte-level
+  fact. They are a transcription model's boundary estimates — 0.021 s early at the
+  head, 0.244 s late at the tail, against a clip that truly spans 2.300–3.715 s.
+  Word timings gate **content**; they do not establish **extent**. Left visible
+  rather than deleted: the released 1.1.0 CHANGELOG carries the wrong claim, and a
+  correction that hides the error destroys the evidence of how it was made.
 
 ### Measured
 

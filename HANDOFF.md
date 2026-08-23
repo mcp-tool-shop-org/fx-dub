@@ -57,12 +57,29 @@ VOICE:                             Hey, tell Charlie I got that thing for him,
 
 The off-frame man opens **and** closes, so MAC is listening through the final line. Staged correctly; do not re-cut. Machine-readable at [`docs/scenes/night-street.json`](docs/scenes/night-street.json).
 
-### Reproducing it
+### Reproducing it — proven byte-identical, 2026-08-23
+
+The whole delivered run rebuilds from **three storage keys**, verified at every hop by FLAC
+STREAMINFO md5 (bytes 18–34 of the block body — no decoder needed, free to check locally):
+
+```
+VOICE b7066f85…  +  MAC d7ba748c… placed at 2.30 s
+      → assembled VO  8eadf234…            md5 e65dc817…
+      → +7 dB (AudioAdjustVolume)          md5 b2816092…  = the delivered stem_vo
+      → + bed d8ef106a… at gain_1_db −12   md5 c34976a8…  = the delivered mix
+```
+
+Two things this settles. **`AudioMix` cannot apply the +7 itself** — its gains clamp at ±6 dB,
+so the VO boost is an `AudioAdjustVolume` node ahead of the bus. And **the stems ship at
+different points in the gain chain**: `stem_vo` is post-gain, the bed stem is pre-gain. That
+asymmetry is why `audition_receipt` needs `--bed-gain-db`, and why its −9 default reports this
+run's ducking depth 3 LU low. Pass `-12`.
+
 
 | Character | Source | Storage key |
 |---|---|---|
 | VOICE (deep) | ByteDance cast take, re-spoken via **same-engine audio reference**, 3 lines at scene timestamps, seed 502 | ref `0597c19d…`, render `cb457cf0…`, MAC's bleed excised → `b7066f85…` |
-| MAC (gritty) | ByteDance text-only, acoustic grit brief, pitch 0, seed 601 | ⚠ take `37d38cda…` (**measured 3.624 s**), spliced → `d7ba748c…` (**measured 1.415 s**). **Neither is the delivered artifact** — the mix carries MAC speaking 2.279–3.959 s (~1.68 s). The key actually placed into the VO is unrecorded; rebuild from the assembled VO `8eadf234…` instead |
+| MAC (gritty) | ByteDance text-only, acoustic grit brief, pitch 0, seed 601 | take `37d38cda…` (3.624 s), spliced to close a 1.880 s pause → `d7ba748c…` (1.415 s). ✅ **Verified byte-identical 2026-08-23** — placed at 2.30 s and mixed with VOICE it reproduces `8eadf234…` exactly |
 | VO assembled | MAC placed at 2.30 s into the VOICE track | `8eadf234…` |
 | Bed | ElevenLabs `eleven_sfx_v2`, rain + footsteps-A at −4 dB, −17.20 LUFS | `d8ef106a…` |
 | Clip | 161 frames, 10.0625 s, 16 fps, no audio track | `ea68c5aa…` |
