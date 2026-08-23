@@ -30,6 +30,7 @@ import argparse
 import glob
 import json
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -79,7 +80,74 @@ def _read_text(path: str) -> str:
         return handle.read()
 
 
-def check_run(run_dir: str, bed_gain_db: float = DEFAULT_BED_GAIN_DB) -> dict:
+#: Words a captioner uses for a visible person, singular and plural.
+PERSON_WORDS = (
+    "man", "men", "woman", "women", "person", "people", "figure", "figures",
+    "guy", "guys", "boy", "boys", "girl", "girls", "child", "children",
+)
+
+#: Counting words a captioner puts in front of them. "a"/"an"/"one" all mean one.
+COUNT_WORDS = {
+    "a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+}
+
+
+def caption_person_count(text: str) -> int | None:
+    """How many visible people the caption CLAIMS, or None if it does not say.
+
+    Deliberately shallow: it reads "<count> <person-word>" and nothing cleverer.
+    A caption that never counts people returns None and the check is skipped —
+    silence is not a claim, and a heuristic that guesses would fail closed on
+    every ordinary caption.
+    """
+    if not text:
+        return None
+    words = re.findall(r"[a-z]+", text.lower())
+    best = None
+    for i, word in enumerate(words[1:], start=1):
+        if word in PERSON_WORDS:
+            count = COUNT_WORDS.get(words[i - 1])
+            if count is not None:
+                best = count if best is None else max(best, count)
+    return best
+
+
+def scene_on_frame_count(scene: dict) -> int | None:
+    """How many cast members the scene contract declares VISIBLE, or None.
+
+    Accepts both shapes. Explicit is preferred::
+
+        "cast": {"MAC": {"description": "...", "on_frame": true}}
+
+    A legacy string value is read for the words "on-frame" / "off-frame", which
+    the night-street contract already carried before the field existed.
+    """
+    cast = (scene or {}).get("cast")
+    if not isinstance(cast, dict) or not cast:
+        return None
+    visible = 0
+    known = 0
+    for entry in cast.values():
+        flag = None
+        if isinstance(entry, dict) and isinstance(entry.get("on_frame"), bool):
+            flag = entry["on_frame"]
+        else:
+            text = entry.get("description", "") if isinstance(entry, dict) else str(entry)
+            low = text.lower()
+            if "off-frame" in low or "off frame" in low:
+                flag = False
+            elif "on-frame" in low or "on frame" in low:
+                flag = True
+        if flag is None:
+            continue
+        known += 1
+        visible += 1 if flag else 0
+    return visible if known == len(cast) else None
+
+
+def check_run(run_dir: str, bed_gain_db: float = DEFAULT_BED_GAIN_DB,
+              scene: dict | None = None) -> dict:
     """Return {'checks': [...], 'measured': {...}} — never raises on a bad artifact.
 
     ``bed_gain_db`` is the mix gain the graph applies to the bed. The bed meter
@@ -242,6 +310,22 @@ def check_run(run_dir: str, bed_gain_db: float = DEFAULT_BED_GAIN_DB) -> dict:
                "{0} chars".format(len(text)),
                "dispatch choice H (the semantic intermediate must reach the manifest)")
 
+        # The caption is not decoration: it feeds the audio prompt. Nothing in the
+        # pipeline ever compared it to the picture, and on the delivered run it
+        # claimed "two men ... facing each other" over a one-man shot (measured
+        # 2026-08-23 from decoded frames, confirmed by the Director). We cannot see
+        # pixels from a zero-dependency package -- but the scene contract already
+        # states who is on frame, so the caption can be checked against THAT.
+        claimed = caption_person_count(text)
+        declared = scene_on_frame_count(scene) if scene else None
+        if claimed is not None and declared is not None:
+            measured["caption_person_count"] = claimed
+            measured["scene_on_frame_count"] = declared
+            record("caption:person_count_matches_cast", claimed == declared,
+                   "caption claims {0}, scene declares {1} on frame".format(claimed, declared),
+                   "trap: Florence-2 captioned two men into a one-man shot and the "
+                   "caption drives the audio prompt")
+
     return {"run_dir": run_dir, "checks": checks, "measured": measured}
 
 
@@ -267,6 +351,10 @@ def main(argv=None) -> int:
                         default=DEFAULT_BED_GAIN_DB,
                         help="mix gain applied to the bed, in dB (the bed meter reads "
                              "the stem pre-gain, so ducking depth needs it)")
+    parser.add_argument("--scene", dest="scene_path", default=None,
+                        help="scene contract JSON; enables the caption-vs-cast check "
+                             "(the caption drives the audio prompt and nothing else "
+                             "compares it to the picture)")
     parser.add_argument("--debug", action="store_true",
                         help="re-raise on error instead of printing a structured message")
     args = parser.parse_args(argv)
@@ -282,7 +370,23 @@ def main(argv=None) -> int:
         }}, indent=2), file=sys.stderr)
         return 2
 
-    result = check_run(args.run_dir, bed_gain_db=args.bed_gain_db)
+    scene = None
+    if args.scene_path:
+        try:
+            with open(args.scene_path, encoding="utf-8") as handle:
+                scene = json.load(handle)
+        except (OSError, ValueError) as exc:
+            if args.debug:
+                raise
+            print(json.dumps({"error": {
+                "code": "scene_unreadable",
+                "message": "Could not read the scene contract at {0!r}: {1}".format(
+                    args.scene_path, exc),
+                "hint": "Point --scene at a scene JSON such as docs/scenes/night-street.json.",
+            }}, indent=2), file=sys.stderr)
+            return 2
+
+    result = check_run(args.run_dir, bed_gain_db=args.bed_gain_db, scene=scene)
     print(render(result))
     if args.json_path:
         try:

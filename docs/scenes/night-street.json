@@ -5,8 +5,17 @@
   "max_gap_within_line_s": 0.5,
   "min_gap_between_speakers_s": 0.0,
   "cast": {
-    "VOICE": "off-frame, deep and gritty",
-    "MAC": "on-frame, gritty, weary"
+    "VOICE": {
+      "description": "off-frame, deep and gritty",
+      "on_frame": false,
+      "note": "Director 2026-08-23: 'One man is off camera the entire clip.' VOICE is never visible."
+    },
+    "MAC": {
+      "description": "on-frame, gritty, weary",
+      "on_frame": true,
+      "face": { "frame": 60, "x": 348, "y": 122 },
+      "note": "Face coordinates measured 2026-08-23 from decoded frame 60 of the 832x480 source and verified by crosshair overlay. They pin SyncLipSyncNode's speaker_selection='coordinates'; left unpinned the node picks a face on its own and still passes every container check."
+    }
   },
   "lines": [
     {

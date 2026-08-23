@@ -196,5 +196,75 @@ class PackageVersionTests(unittest.TestCase):
         self.assertRegex(self._pyproject_version(), r"^\d+\.\d+\.\d+$")
 
 
+class PictureStageTests(unittest.TestCase):
+    """The lip-sync builders. Added after session 5 hand-typed every one of these
+    into a chat window -- the exact mistake this module exists to prevent."""
+
+    def _clean(self, graph):
+        self.assertEqual([], graph_lint.api_structural_findings(graph))
+        self.assertEqual(set(), graph_lint.fired_api(graph))
+
+    def test_lipsync_pins_the_speaker_and_is_clean(self):
+        g = vo_graphs.lipsync("clip.mp4", "mac.flac", "fxdub19/out",
+                              speaker_x=348, speaker_y=122, speaker_frame=60)
+        self._clean(g)
+        node = [n for n in g.values() if n["class_type"] == "SyncLipSyncNode"][0]
+        self.assertEqual("coordinates", node["inputs"]["model.speaker_selection"])
+        self.assertEqual("silence", node["inputs"]["model.sync_mode"])
+        self.assertEqual(348, node["inputs"]["model.speaker_x"])
+
+    def test_lipsync_default_mode_leaves_the_picture_alone(self):
+        g = vo_graphs.lipsync("clip.mp4", "mac.flac", "p", speaker_x=1, speaker_y=1)
+        self.assertEqual([], graph_lint.api_lipsync_resizing_sync_mode(g))
+
+    def test_lipsync_resizing_mode_is_caught_by_the_lint(self):
+        """The builder does not forbid remap -- the detector reports it."""
+        g = vo_graphs.lipsync("clip.mp4", "mac.flac", "p", speaker_x=1, speaker_y=1,
+                              sync_mode="remap")
+        self.assertTrue(graph_lint.api_lipsync_resizing_sync_mode(g))
+
+    def test_save_video_never_carries_codec_encoding(self):
+        """codec.encoding crashes pre-flight with no verdict at all."""
+        g = vo_graphs.lipsync("c.mp4", "a.flac", "p", speaker_x=1, speaker_y=1)
+        save = [n for n in g.values() if n["class_type"] == "SaveVideo"][0]
+        self.assertFalse([k for k in save["inputs"] if k.startswith("codec.")])
+
+    def test_mux_avoids_the_broken_node_and_is_clean(self):
+        """AudioVideoCombine is broken on cloud; the detector must agree."""
+        g = vo_graphs.mux("clip.mp4", "mix.flac", "fxdub21/dubbed")
+        self._clean(g)
+        self.assertFalse(any(n["class_type"] == "AudioVideoCombine" for n in g.values()))
+        self.assertTrue(any(n["class_type"] == "VHS_VideoCombine" for n in g.values()))
+        self.assertTrue(graph_lint.api_broken_node(
+            {"1": {"class_type": "AudioVideoCombine", "inputs": {}}}))
+
+    def test_mux_drives_frame_rate_from_a_link(self):
+        """A bare frame_rate widget reads 8 and silently doubles the duration."""
+        g = vo_graphs.mux("clip.mp4", "mix.flac", "p")
+        combine = [n for n in g.values() if n["class_type"] == "VHS_VideoCombine"][0]
+        self.assertIsInstance(combine["inputs"]["frame_rate"], list)
+
+    def test_frames_emits_one_save_per_index(self):
+        g = vo_graphs.frames("clip.mp4", "fxdub16", [20, 60, 120])
+        self._clean(g)
+        saves = [n for n in g.values() if n["class_type"] == "SaveImage"]
+        self.assertEqual(3, len(saves))
+        self.assertEqual(
+            {"fxdub16/f020", "fxdub16/f060", "fxdub16/f120"},
+            {n["inputs"]["filename_prefix"] for n in saves})
+
+    def test_place_exact_lands_on_the_total(self):
+        """2.279 lead + 1.415 clip + tail must total the picture exactly."""
+        g = vo_graphs.place_exact("mac.flac", 2.279, 1.415, 10.0625, "fxdub18/mac")
+        self._clean(g)
+        durations = [n["inputs"]["duration"] for n in g.values()
+                     if n["class_type"] == "EmptyAudio"]
+        self.assertAlmostEqual(10.0625, sum(durations) + 1.415, places=6)
+
+    def test_place_exact_refuses_a_clip_that_does_not_fit(self):
+        with self.assertRaises(ValueError):
+            vo_graphs.place_exact("mac.flac", 8.0, 4.0, 10.0625, "p")
+
+
 if __name__ == "__main__":
     unittest.main()

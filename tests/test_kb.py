@@ -40,7 +40,7 @@ MIN_ROWS = {
 #: means the dispatch changed, which must be deliberate — so this stays exact.
 EXACT_ROWS = {"decisions": 10}
 
-NODE_STATUSES = {"present", "reported", "absent", "unknown"}
+NODE_STATUSES = {"present", "reported", "absent", "unknown", "broken"}
 CLASSES = {"A", "B"}
 
 _ORIGINAL_DB = None

@@ -169,7 +169,8 @@ class RegistryHygieneTests(unittest.TestCase):
     def test_every_api_detector_fires_on_at_least_one_fixture(self):
         """No detector may pass by never being exercised."""
         fixtures = [CLONE_WRONG_SLOT, FISH_WRONG_VOICES, USES_AUDIOPAD,
-                    BYTEDANCE_GLOBAL_PITCH, BYTEDANCE_AUDIO_REFERENCE]
+                    BYTEDANCE_GLOBAL_PITCH, BYTEDANCE_AUDIO_REFERENCE,
+                    LIPSYNC_UNPINNED, LIPSYNC_REMAP, SAVEVIDEO_CODEC_ENCODING]
         seen = set()
         for fixture in fixtures:
             seen |= graph_lint.fired_api(fixture)
@@ -181,6 +182,105 @@ class RegistryHygieneTests(unittest.TestCase):
             api = graph_lint.load_graph(path)
             fired = graph_lint.fired_api(api)
             self.assertEqual(fired, set(), "{0}: {1}".format(os.path.basename(path), fired))
+
+
+
+# --- picture stage (session 5, 2026-08-23) ---------------------------------------
+
+#: THE NEAR-MISS. speaker_selection defaults to "default" ("let the model decide").
+#: Submitted like this the job COMPLETES, returns a correctly-framed 832x480 MP4 at
+#: the right duration, and passes every container check we own -- with whichever
+#: face the model chose doing the talking. The in-app agent refused to build this
+#: because its tool surface could not address the coordinate fields, which is the
+#: only reason it was never submitted.
+LIPSYNC_UNPINNED = {
+    "1": {"class_type": "LoadVideo", "inputs": {"file": "clip.mp4"}},
+    "2": {"class_type": "LoadAudio", "inputs": {"audio": "mac.flac"}},
+    "3": {"class_type": "SyncLipSyncNode",
+          "inputs": {"video": ["1", 0], "audio": ["2", 0], "seed": 42,
+                     "model": "sync-3", "model.sync_mode": "silence"}},
+}
+
+#: SUCCEEDED: job 4b2339b4-804a-42aa-8198-e2bf89877803, mouth on the named face.
+LIPSYNC_PINNED = {
+    "1": {"class_type": "LoadVideo", "inputs": {"file": "clip.mp4"}},
+    "2": {"class_type": "LoadAudio", "inputs": {"audio": "mac.flac"}},
+    "3": {"class_type": "SyncLipSyncNode",
+          "inputs": {"video": ["1", 0], "audio": ["2", 0], "seed": 42,
+                     "model": "sync-3", "model.sync_mode": "silence",
+                     "model.speaker_selection": "coordinates",
+                     "model.speaker_frame": 60,
+                     "model.speaker_x": 348, "model.speaker_y": 122}},
+}
+
+#: remap time-stretches the PICTURE to the audio length. bounce and loop resize it
+#: too. Only "silence" leaves the delivered duration alone.
+LIPSYNC_REMAP = {
+    "3": {"class_type": "SyncLipSyncNode",
+          "inputs": {"video": ["1", 0], "audio": ["2", 0], "seed": 42,
+                     "model": "sync-3", "model.sync_mode": "remap",
+                     "model.speaker_selection": "coordinates",
+                     "model.speaker_x": 348, "model.speaker_y": 122}},
+}
+
+#: CRASHED local pre-flight: "candidate.toLowerCase is not a function", no verdict
+#: at all. codec.encoding's options are objects, not strings.
+SAVEVIDEO_CODEC_ENCODING = {
+    "4": {"class_type": "SaveVideo",
+          "inputs": {"video": ["3", 0], "filename_prefix": "out",
+                     "format": "mp4", "codec": "h264", "codec.encoding": "auto"}},
+}
+
+#: VALIDATED clean.
+SAVEVIDEO_PLAIN = {
+    "4": {"class_type": "SaveVideo",
+          "inputs": {"video": ["3", 0], "filename_prefix": "out",
+                     "format": "mp4", "codec": "h264"}},
+}
+
+
+class LipsyncSpeakerTests(unittest.TestCase):
+    def test_red_on_unpinned_speaker(self):
+        self.assertTrue(graph_lint.api_lipsync_unpinned_speaker(LIPSYNC_UNPINNED))
+
+    def test_silent_on_pinned_speaker(self):
+        self.assertEqual([], graph_lint.api_lipsync_unpinned_speaker(LIPSYNC_PINNED))
+
+    def test_red_when_coordinates_selected_but_absent(self):
+        graph = {"3": {"class_type": "SyncLipSyncNode",
+                       "inputs": {"video": ["1", 0], "audio": ["2", 0], "seed": 42,
+                                  "model": "sync-3",
+                                  "model.speaker_selection": "coordinates"}}}
+        self.assertTrue(graph_lint.api_lipsync_unpinned_speaker(graph))
+
+    def test_auto_detect_is_not_good_enough(self):
+        """auto-detect follows the ACTIVE speaker -- useless when the speaker is off-frame."""
+        graph = {"3": {"class_type": "SyncLipSyncNode",
+                       "inputs": {"model": "sync-3",
+                                  "model.speaker_selection": "auto-detect"}}}
+        self.assertTrue(graph_lint.api_lipsync_unpinned_speaker(graph))
+
+
+class LipsyncSyncModeTests(unittest.TestCase):
+    def test_red_on_remap(self):
+        self.assertTrue(graph_lint.api_lipsync_resizing_sync_mode(LIPSYNC_REMAP))
+
+    def test_silent_on_silence(self):
+        self.assertEqual([], graph_lint.api_lipsync_resizing_sync_mode(LIPSYNC_PINNED))
+
+    def test_cut_off_is_allowed(self):
+        """cut_off trims rather than resamples; it is the cheap probe mode."""
+        graph = {"3": {"class_type": "SyncLipSyncNode",
+                       "inputs": {"model": "sync-3", "model.sync_mode": "cut_off"}}}
+        self.assertEqual([], graph_lint.api_lipsync_resizing_sync_mode(graph))
+
+
+class SaveVideoCodecTests(unittest.TestCase):
+    def test_red_on_codec_encoding(self):
+        self.assertTrue(graph_lint.api_savevideo_codec_encoding(SAVEVIDEO_CODEC_ENCODING))
+
+    def test_silent_without_it(self):
+        self.assertEqual([], graph_lint.api_savevideo_codec_encoding(SAVEVIDEO_PLAIN))
 
 
 if __name__ == "__main__":

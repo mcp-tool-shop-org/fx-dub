@@ -51,10 +51,18 @@ def make_flac(sample_rate=48000, channels=2, seconds=10.0) -> bytes:
     return build_streaminfo(sample_rate, channels, 16, int(sample_rate * seconds))
 
 
+#: One visible character, one off-frame -- the night-street shape. The caption
+#: check compares a captioner's person-count claim against this.
+ONE_ON_FRAME = {"cast": {
+    "VOICE": {"description": "off-frame, deep and gritty", "on_frame": False},
+    "MAC": {"description": "on-frame, gritty, weary", "on_frame": True},
+}}
+
+
 def write_run(root, *, mix_rate=48000, bed_rate=48000, vo_rate=24000,
               mix_lufs=-18.1, vo_lufs=-14.0, bed_lufs=-17.2, bed_gain_db=-9.0,
               frames=161, handlers=(b"vide", b"soun"),
-              track_duration=164864, caption="a rain-soaked street at night", omit=()):
+              track_duration=164864, caption="a man on a rain-soaked street at night", omit=()):
     """Materialise a synthetic run directory; `omit` drops deliverables by key."""
     files = {
         "mix": ("mix_00001_.flac", make_flac(mix_rate)),
@@ -134,8 +142,12 @@ class RedGateTests(unittest.TestCase):
         # bed_gain_db describes the GRAPH, not the artifacts, so it is threaded to
         # the checker rather than written into the run directory.
         bed_gain_db = kwargs.get("bed_gain_db", -9.0)
+        # scene describes the CONTRACT, not the artifacts, so it is threaded to the
+        # checker rather than written into the run directory.
+        scene = kwargs.pop("scene", ONE_ON_FRAME)
         write_run(tmp.name, **kwargs)
-        return verdict(audition_receipt.check_run(tmp.name, bed_gain_db=bed_gain_db))
+        return verdict(audition_receipt.check_run(
+            tmp.name, bed_gain_db=bed_gain_db, scene=scene))
 
     def test_catches_wrong_sample_rate(self):
         v = self._run(mix_rate=44100)
@@ -221,7 +233,8 @@ class RedGateTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         write_run(tmp.name)
-        good = {c["check"] for c in audition_receipt.check_run(tmp.name)["checks"]}
+        good = {c["check"] for c in audition_receipt.check_run(
+            tmp.name, scene=ONE_ON_FRAME)["checks"]}
 
         broken = [
             # every rate wrong and mutually disagreeing, loudness far off target
@@ -238,6 +251,9 @@ class RedGateTests(unittest.TestCase):
             self._run(handlers=(b"soun",)),
             # length drift
             self._run(track_duration=16384 * 4),
+            # the caption hallucinates a second person into a one-man shot --
+            # the delivered run's real defect, measured 2026-08-23
+            self._run(caption="two men standing in a city at night, facing each other"),
             # nothing delivered at all
             self._run(omit=("mix", "stem_bed", "stem_vo", "mix_lufs",
                             "vo_lufs", "caption", "dubbed")),

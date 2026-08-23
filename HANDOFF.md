@@ -20,8 +20,8 @@ python kb/build_db.py    # rebuild the project DB from seeds
 | | |
 |---|---|
 | Version | **v1.0.1** — [PyPI](https://pypi.org/project/fx-dub/) · [Releases](https://github.com/mcp-tool-shop-org/fx-dub/releases) |
-| Tests | **171**, CI green on 3.10 + 3.12 |
-| Traps recorded | **65** in `kb/fxdub.db` |
+| Tests | **189**, CI green on 3.10 + 3.12 |
+| Traps recorded | **86** in `kb/fxdub.db` |
 | Site | https://mcp-tool-shop-org.github.io/fx-dub/ · [handbook](https://mcp-tool-shop-org.github.io/fx-dub/handbook/) · [llms.txt](https://mcp-tool-shop-org.github.io/fx-dub/llms.txt) |
 | Shipcheck | all hard gates pass, 23 checked / 0 unchecked |
 
@@ -39,6 +39,7 @@ The second exists because the first taught us that container metrics cannot see 
 ## 2. The delivered dub
 
 `runs/2026-08-22-v28-bytedance/` — **19/19** container checks, **11/11** content checks.
+With `--scene docs/scenes/night-street.json` it is **19/20**: the new `caption:person_count_matches_cast` fails, because the caption claims two men and the contract declares one on frame. That is a real finding about the delivered run, not a regression — the audio is unaffected and the Director accepted the dub.
 
 - 48 kHz mix at **−18.09 LUFS** · dialogue **+11.17 LU** over the bed
 - re-muxed MP4 carries audio, **161 frames**, 10.069 s
@@ -61,12 +62,36 @@ The off-frame man opens **and** closes, so MAC is listening through the final li
 | Character | Source | Storage key |
 |---|---|---|
 | VOICE (deep) | ByteDance cast take, re-spoken via **same-engine audio reference**, 3 lines at scene timestamps, seed 502 | ref `0597c19d…`, render `cb457cf0…`, MAC's bleed excised → `b7066f85…` |
-| MAC (gritty) | ByteDance text-only, acoustic grit brief, pitch 0, seed 601 | take `37d38cda…`, spliced to close a 1.880 s pause → `d7ba748c…` |
+| MAC (gritty) | ByteDance text-only, acoustic grit brief, pitch 0, seed 601 | ⚠ take `37d38cda…` (**measured 3.624 s**), spliced → `d7ba748c…` (**measured 1.415 s**). **Neither is the delivered artifact** — the mix carries MAC speaking 2.279–3.959 s (~1.68 s). The key actually placed into the VO is unrecorded; rebuild from the assembled VO `8eadf234…` instead |
 | VO assembled | MAC placed at 2.30 s into the VOICE track | `8eadf234…` |
 | Bed | ElevenLabs `eleven_sfx_v2`, rain + footsteps-A at −4 dB, −17.20 LUFS | `d8ef106a…` |
 | Clip | 161 frames, 10.0625 s, 16 fps, no audio track | `ea68c5aa…` |
 
 **Re-mixing is free.** `LoadAudio` resolves a storage key its COMBO never lists, so any remix is deterministic with no regeneration. Pull keys from `get_output`.
+
+### Lip-synced variant (2026-08-23, session 5)
+
+`runs/2026-08-23-fxdub21-remux/dubbed_lipsynced.mp4` — the same dub with MAC's mouth driven to his
+line by sync.so, then the shipped mix laid back over it. **832 × 480, 161 frames, 10.0625 s video /
+10.0693 s audio, both tracks present** — the original contract intact.
+
+- picture: `SyncLipSyncNode` (sync-3), `sync_mode: silence`, `speaker_selection: coordinates` at
+  **(348, 122)** on frame 60, seed 42 → key `4ff03353…`. ~403 credits.
+- audio: the v28 mix **rebuilt from stem storage keys** and proved byte-identical by FLAC md5
+  (`c34976a8…`) → key `e60f56de…`. Recipe: `AudioAdjustVolume(VO, +7)` → `AudioMix(audio_1=bed,
+  gain_1_db=-12)`. **AudioMix alone cannot do it** — its gains clamp at ±6 dB.
+- mux: `GetVideoComponents → VHS_VideoCombine`, frame_rate LINK-driven.
+  **`AudioVideoCombine` is broken on cloud** (`ImportError: TorchCodec`).
+
+`SyncLipSyncNode` re-times the picture (161 frames @ 16 fps → 473 @ ~47 fps), but the mux
+round-trip decodes at the source cadence and hands 161 frames back. Assert frame count on the
+**deliverable**, never on the raw sync output. Every graph is a builder in `tools/vo_graphs.py`.
+
+**The delivered run's caption is wrong.** It reads *"two men standing in a city at night, facing
+each other"*; there is **one** man on screen — Director, 2026-08-23: *"One man is off camera the
+entire clip."* The caption feeds the audio prompt, so `audition_receipt` now carries
+`caption:person_count_matches_cast`, which compares the claim against the scene contract's
+`on_frame` cast count. Run it with `--scene docs/scenes/night-street.json`.
 
 **Known and accepted:** the last line's tail is clipped — the VOICE render's `[6.3s:9.8s]` timestamp ended the take at 9.840 s, so the decay on "drop by" was never generated. The mix is 10.000 s and the picture is 10.062 s, so there is room. Director: *"Cuts him off at the end, but it's good enough."*
 

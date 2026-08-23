@@ -551,6 +551,9 @@ AUTOGROW_SLOT_NAMES = {
 #: timeline instead.
 BROKEN_ON_CLOUD = {
     "AudioPad": "raises UnboundLocalError: pad_samples; use EmptyAudio + AudioConcat",
+    "AudioVideoCombine": "raises ImportError: TorchCodec is required for "
+                         "save_with_torchcodec; mux via GetVideoComponents -> "
+                         "VHS_VideoCombine(images, audio) instead",
 }
 
 
@@ -660,12 +663,89 @@ def api_bytedance_reference_unverified(api):
 
 #: API detector registry. Kept separate from DETECTORS because the graph shape
 #: differs; ``test_graphs.py`` drives both.
+#: sync_mode values that resize the OUTPUT to the audio length instead of leaving
+#: the picture alone. remap additionally time-stretches it.
+LIPSYNC_RESIZING_MODES = {
+    "bounce": "plays the video forward then backward until the audio ends",
+    "loop": "restarts the video until the audio ends",
+    "remap": "TIME-STRETCHES the picture to the audio length",
+}
+
+
+def api_lipsync_unpinned_speaker(api):
+    """A lip-sync node that lets the model choose whose mouth to move.
+
+    ``model.speaker_selection`` defaults to ``default``. Left unset, the node
+    returns a completed, correctly-framed, well-synced MP4 with whichever face it
+    picked doing the talking -- and it passes every container check we own. This
+    is the container-metrics-cannot-see-content trap in the visual domain.
+    """
+    out = []
+    for node_id, node in api_nodes_of_type(api, "SyncLipSyncNode"):
+        inputs = node.get("inputs") or {}
+        if not isinstance(inputs, dict):
+            continue
+        selection = inputs.get("model.speaker_selection")
+        if selection != "coordinates":
+            out.append(_f("api_lipsync_unpinned_speaker", node_id,
+                          "model.speaker_selection is {0!r}; pin it to 'coordinates' "
+                          "with model.speaker_x / model.speaker_y or the node picks a "
+                          "face and the result passes every container check anyway"
+                          .format(selection)))
+            continue
+        missing = [k for k in ("model.speaker_x", "model.speaker_y") if k not in inputs]
+        if missing:
+            out.append(_f("api_lipsync_unpinned_speaker", node_id,
+                          "speaker_selection is 'coordinates' but {0} absent; both "
+                          "default to 0".format(", ".join(missing))))
+    return out
+
+
+def api_lipsync_resizing_sync_mode(api):
+    """A lip-sync node whose sync_mode changes the delivered picture."""
+    out = []
+    for node_id, node in api_nodes_of_type(api, "SyncLipSyncNode"):
+        inputs = node.get("inputs") or {}
+        if not isinstance(inputs, dict):
+            continue
+        mode = inputs.get("model.sync_mode")
+        if mode in LIPSYNC_RESIZING_MODES:
+            out.append(_f("api_lipsync_resizing_sync_mode", node_id,
+                          "sync_mode {0!r} {1}; only 'silence' leaves the picture's "
+                          "duration alone".format(mode, LIPSYNC_RESIZING_MODES[mode])))
+    return out
+
+
+def api_savevideo_codec_encoding(api):
+    """SaveVideo addressing codec.encoding, which crashes local pre-flight.
+
+    Its options are OBJECTS (``{"key": "auto", "inputs": {...}}``), not strings,
+    and the validator lowercases them: the call returns
+    ``candidate.toLowerCase is not a function`` and no verdict at all. Omitting
+    the field validates clean.
+    """
+    out = []
+    for node_id, node in api_nodes_of_type(api, "SaveVideo"):
+        inputs = node.get("inputs") or {}
+        if not isinstance(inputs, dict):
+            continue
+        if any(k.startswith("codec.") for k in inputs):
+            out.append(_f("api_savevideo_codec_encoding", node_id,
+                          "SaveVideo carries a codec.* sub-field; pre-flight raises "
+                          "'candidate.toLowerCase is not a function' and returns NO "
+                          "verdict. Omit it."))
+    return out
+
+
 API_DETECTORS = OrderedDict([
     ("api_autogrow_slot_name", api_autogrow_slot_name),
     ("api_fish_autogrow_voices", api_fish_autogrow_voices),
     ("api_broken_node", api_broken_node),
     ("api_bytedance_global_pitch_multivoice", api_bytedance_global_pitch_multivoice),
     ("api_bytedance_reference_unverified", api_bytedance_reference_unverified),
+    ("api_lipsync_unpinned_speaker", api_lipsync_unpinned_speaker),
+    ("api_lipsync_resizing_sync_mode", api_lipsync_resizing_sync_mode),
+    ("api_savevideo_codec_encoding", api_savevideo_codec_encoding),
 ])
 
 
