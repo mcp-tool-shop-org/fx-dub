@@ -20,7 +20,7 @@ python kb/build_db.py    # rebuild the project DB from seeds
 | | |
 |---|---|
 | Version | **v1.1.0** — [PyPI](https://pypi.org/project/fx-dub/) · [Releases](https://github.com/mcp-tool-shop-org/fx-dub/releases) |
-| Tests | **189**, CI green on 3.10 + 3.12 |
+| Tests | **197**, CI green on 3.10 + 3.12 |
 | Traps recorded | **86** in `kb/fxdub.db` |
 | Site | https://mcp-tool-shop-org.github.io/fx-dub/ · [handbook](https://mcp-tool-shop-org.github.io/fx-dub/handbook/) · [llms.txt](https://mcp-tool-shop-org.github.io/fx-dub/llms.txt) |
 | Shipcheck | all hard gates pass, 23 checked / 0 unchecked |

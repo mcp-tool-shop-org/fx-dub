@@ -239,7 +239,7 @@ and closed while the off-frame character speaks.
 
 It scores **19/20** once you pass `--scene`, and the failure is real: the delivered
 run's caption claims two men over a one-man shot. That check is new in this release
-and it caught a defect that had been shipping green. 189 tests, CI green. Full
+and it caught a defect that had been shipping green. 197 tests, CI green. Full
 history in the [CHANGELOG](CHANGELOG.md).
 
 | Piece | State |

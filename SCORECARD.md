@@ -1,12 +1,13 @@
 # Scorecard
 
 **Repo:** mcp-tool-shop-org/fx-dub
-**Date:** 2026-08-22
+**Assessed:** 2026-08-22 (v0.x → v1.0.0) · **re-audited:** 2026-08-23 (v1.1.0)
 **Type tags:** `[all]` `[cli]` `[pypi]`
 
-Scores are the state **at the start of the full treatment**, before remediation.
-The post-treatment result is at the bottom and is the actual `shipcheck audit`
-output, not an estimate.
+Scores are the state **at the start of the full treatment**, before remediation —
+they describe v1.0.0's starting position and are kept as evidence, not refreshed.
+The post-treatment result is below, and the v1.1.0 re-audit is at the bottom. Both
+are actual `shipcheck audit` output, not estimates.
 
 ## Pre-Remediation Assessment
 
@@ -66,3 +67,54 @@ The 14 skips are all genuine type mismatches — `[npm]`, `[mcp]`, `[desktop]`,
 destructive actions to gate, no log stream to level, and no dependency-update bot
 for a package with zero runtime dependencies. Each carries its reasoning inline in
 `SHIP_GATE.md`.
+
+---
+
+## v1.1.0 Re-Audit — 2026-08-23
+
+`npx @mcptoolshop/shipcheck audit` — **all hard gates pass**, unchanged:
+
+```
+Checked:   23
+Unchecked: 0
+Skipped:   14
+Pass rate: 100%
+```
+
+**That number reads this repo's `SHIP_GATE.md` checkboxes, not the repo.** So the
+release's hard-gate claims were re-verified independently, against the **published
+wheel** rather than the working tree:
+
+| Gate | Claim | How it was confirmed |
+|---|---|---|
+| A | No network egress | no `requests` / `urllib` / `http` / `socket` import anywhere in `tools/` |
+| A | Reads and writes constrained | every `open(..., "w")` grepped: two, both the caller's `--json` path |
+| B | Structured errors, distinct exit codes | `{code, message, hint}` on stderr; **2** missing dir · **1** contract failed · **0** clean |
+| C | `--help` accurate | `--scene` present and described in the generated help |
+| D | Version matches tag | `pyproject` `1.1.0` = tag `v1.1.0` |
+| D | Zero runtime dependencies | `dependencies = []`, now asserted locally as well as in CI |
+| D | Clean packaging | wheel carries 6 modules + `py.typed` + LICENSE, nothing stray |
+
+### What the walk found
+
+A 100% pass rate is a self-report, and one item had rotted:
+
+- **`scene_unreadable` shipped in v1.1.0 with no test coverage**, while gate B
+  already claimed its error codes were covered. The behaviour was correct — the
+  assertion simply did not exist. Closed by `SceneFlagContractTests` (5 tests:
+  missing scene, malformed scene, `--debug` re-raise, the check appearing with
+  `--scene`, and its absence without).
+- **The zero-dependency promise was enforced only in CI.** `./verify.sh` is
+  documented as the single local gate, so a change adding a dependency would pass
+  locally and fail in CI. Closed by `ZeroDependencyTests`, which is itself proven
+  able to go red.
+
+Suite: **189 → 197 tests**, `verify.sh` PASS.
+
+### The 14 skips, re-walked
+
+Thirteen are type mismatches — `[npm]`, `[mcp]`, `[desktop]`, `[vsix]`, `[vscode]`
+items on a Python CLI — and stay true until fx-dub becomes one of those things.
+The three behavioural ones were re-checked mechanically rather than carried
+forward on trust; the method for each is recorded in `SHIP_GATE.md` so the next
+release can repeat it instead of re-deriving it.

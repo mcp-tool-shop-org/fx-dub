@@ -9,7 +9,9 @@ broken runs.
 
 from __future__ import annotations
 
+import json
 import os
+import re
 import struct
 import sys
 import tempfile
@@ -295,6 +297,106 @@ class CliTests(unittest.TestCase):
             payload = json.load(handle)
         self.assertIn("checks", payload)
         self.assertIn("measured", payload)
+
+
+class SceneFlagContractTests(unittest.TestCase):
+    """--scene is part of the CLI contract, and its failure modes are too.
+
+    v1.1.0 added ``scene_unreadable`` and shipped it with no coverage at all,
+    while SHIP_GATE.md claimed the structured error codes were covered. The
+    behaviour was correct; nothing asserted it. These tests are that assertion.
+    """
+
+    def _run(self, argv):
+        import contextlib, io
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = audition_receipt.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        write_run(self.tmp.name)
+
+    def _scene(self, body):
+        path = os.path.join(self.tmp.name, "scene.json")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(body)
+        return path
+
+    def test_missing_scene_is_a_runtime_error_not_a_silent_skip(self):
+        """A typo'd --scene path must not quietly disable the check."""
+        code, _, err = self._run([self.tmp.name, "--scene",
+                                  os.path.join(self.tmp.name, "no-such.json")])
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(err)["error"]["code"], "scene_unreadable")
+        self.assertNotIn("Traceback", err)
+
+    def test_malformed_scene_exits_two_without_a_traceback(self):
+        code, _, err = self._run([self.tmp.name, "--scene", self._scene("{not json")])
+        self.assertEqual(code, 2)
+        payload = json.loads(err)["error"]
+        self.assertEqual(payload["code"], "scene_unreadable")
+        self.assertIn("hint", payload)
+        self.assertNotIn("Traceback", err)
+
+    def test_debug_re_raises_instead_of_swallowing(self):
+        with self.assertRaises(ValueError):
+            self._run([self.tmp.name, "--scene", self._scene("{not json"), "--debug"])
+
+    def test_scene_enables_the_caption_check(self):
+        scene = self._scene(json.dumps(ONE_ON_FRAME))
+        code, out, _ = self._run([self.tmp.name, "--scene", scene])
+        self.assertEqual(code, 0)
+        self.assertIn("caption:person_count_matches_cast", out)
+
+    def test_without_scene_the_check_is_absent_entirely(self):
+        """No scene is not a failing scene -- the check must not appear at all."""
+        code, out, _ = self._run([self.tmp.name])
+        self.assertEqual(code, 0)
+        self.assertNotIn("caption:person_count_matches_cast", out)
+
+
+class ZeroDependencyTests(unittest.TestCase):
+    """The empty runtime dependency list is a promise SECURITY.md and the landing
+    page both make. It was enforced only in CI, so ./verify.sh -- the single local
+    gate -- would pass a change that CI then rejects. Enforce it locally too.
+    """
+
+    @staticmethod
+    def _declared(body):
+        """Runtime deps from a pyproject body, or None if the field is absent.
+
+        tomllib is 3.11+ and the CI floor is 3.10, so this parses the one field by
+        hand. It anchors to the line start on purpose: the word "dependencies" also
+        appears in the comment above the field, and a plain split grabs the prose.
+        """
+        match = re.search(r"^dependencies\s*=\s*\[([^\]]*)\]", body, re.MULTILINE)
+        if match is None:
+            return None
+        return [x.strip().strip("'\"") for x in match.group(1).split(",") if x.strip()]
+
+    def test_runtime_dependency_list_is_empty(self):
+        path = os.path.join(REPO_ROOT, "pyproject.toml")
+        with open(path, "r", encoding="utf-8") as fh:
+            declared = self._declared(fh.read())
+        self.assertIsNotNone(declared, "pyproject.toml declares no `dependencies` field")
+        self.assertEqual(
+            [], declared,
+            "fx-dub declares runtime dependencies {0}. The package promises none, in "
+            "SECURITY.md and on the landing page.".format(declared))
+
+    def test_the_check_can_actually_fail(self):
+        """A gate that cannot go red is theater. Prove this one fires."""
+        self.assertEqual(["requests"], self._declared('dependencies = ["requests"]\n'))
+        self.assertEqual([], self._declared("dependencies = []\n"))
+        self.assertIsNone(self._declared("# no dependencies field here at all\n"))
+
+    def test_the_comment_above_the_field_does_not_fool_it(self):
+        """The real pyproject has 'Zero runtime dependencies' in prose above it."""
+        body = "# Zero runtime dependencies, deliberately.\ndependencies = []\n"
+        self.assertEqual([], self._declared(body))
 
 
 if __name__ == "__main__":

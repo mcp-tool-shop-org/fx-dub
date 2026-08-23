@@ -23,7 +23,7 @@
 
 ## B. Error Handling
 
-- [x] `[all]` Errors follow the Structured Error Shape: `code`, `message`, `hint`, `cause?`, `retryable?` — emitted as JSON on stderr (`scene_not_found`, `words_malformed`, `unknown_speaker`, `receipt_unwritable`, …); covered by `CliContractTests`
+- [x] `[all]` Errors follow the Structured Error Shape: `code`, `message`, `hint`, `cause?`, `retryable?` — emitted as JSON on stderr (`scene_not_found`, `words_malformed`, `unknown_speaker`, `receipt_unwritable`, `scene_unreadable`, …); covered by `CliContractTests` and `SceneFlagContractTests`. **v1.1.0 shipped `scene_unreadable` with no coverage while this line already claimed it; caught in the v1.1.0 re-audit and closed.**
 - [x] `[cli]` Exit codes: 0 ok · 1 user error · 2 runtime error · 3 partial success — 0 pass, 1 contract failed (a finding, with a receipt to read), 2 the tool could not run. 3 is unused: a receipt is all-or-nothing, there is no partial verification.
 - [x] `[cli]` No raw stack traces without `--debug` — input errors return the structured shape; `--debug` re-raises. Asserted by `test_malformed_json_exits_two_without_a_traceback`.
 - [ ] `[mcp]` Tool errors return structured results — server never crashes on bad input — SKIP: not an MCP server
@@ -46,7 +46,7 @@
 - [x] `[all]` `verify` script exists (test + build + smoke in one command) — `./verify.sh`; CI runs exactly this
 - [x] `[all]` Version in manifest matches git tag — enforced in `release.yml` before publish, which fails the release on a mismatch
 - [x] `[all]` Dependency scanning runs in CI (ecosystem-appropriate) — `pip-audit --strict` on the build/test toolchain
-- [ ] `[all]` Automated dependency update mechanism exists — SKIP: zero runtime dependencies by design, and CI fails the build if that list ever becomes non-empty. The build/test toolchain resolves latest on every run and is audited each time, so there is no pinned set for a bot to bump.
+- [ ] `[all]` Automated dependency update mechanism exists — SKIP: zero runtime dependencies by design, enforced in **two** places: CI fails the build if that list becomes non-empty, and `ZeroDependencyTests` fails `./verify.sh` locally for the same reason. Until v1.1.0 it was CI-only, so the single local gate would pass a change CI then rejected. The build/test toolchain resolves latest on every run and is audited each time, so there is no pinned set for a bot to bump.
 - [ ] `[npm]` **Every publishable package** passes `npx @mcptoolshop/shipcheck pack` — SKIP: not an npm package. fx-dub publishes to PyPI; the equivalent packaging check is on lines 51-52.
 - [x] `[npm]` `engines.node` set · `[pypi]` `python_requires` set — `requires-python = ">=3.10"`, tested on 3.10 and 3.12 in CI
 - [x] `[npm]` Lockfile committed · `[pypi]` Clean wheel + sdist build — `python -m build` produces both; `twine check` runs in `release.yml`; the wheel is installed into a throwaway venv and exercised in `verify.sh`
@@ -66,6 +66,21 @@
 
 **Hard gate (A–D):** Must pass before any version is tagged or published.
 If a section doesn't apply, mark `SKIP:` with justification — don't leave it unchecked.
+
+**A skip is a claim, and claims expire.** Thirteen of the fourteen here are
+type-based — *not an MCP server*, *not a desktop app* — and stay true until fx-dub
+becomes one of those things. The rest are behavioural and were re-verified
+mechanically against **v1.1.0 on 2026-08-23**, not accepted from the last pass:
+
+| Skip | How it was re-checked at v1.1.0 |
+|---|---|
+| No destructive action (line 19) | every `open(..., "w")` in `tools/` grepped: two, both the caller's `--json` path |
+| No log stream (line 40) | every `print()` traced: stdout carries only the receipt, stderr only the structured error |
+| Zero runtime dependencies (line 49) | `dependencies = []` asserted by CI **and** by `ZeroDependencyTests`, which is itself proven able to go red |
+
+The 23 checked items were walked too. One had rotted: the error-code list claimed
+coverage that `scene_unreadable` did not have. Re-run this walk each release — a
+100% pass rate reads this file's checkboxes, not the repo.
 
 **Soft gate (E):** Should be done. Product ships without it, but isn't "whole."
 
