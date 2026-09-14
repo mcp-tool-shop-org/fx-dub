@@ -4,6 +4,63 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`fxdub.verify` — a declared public API.** The alignment core that answers *was
+  this script actually spoken* is now an exported, documented, stable surface:
+  `normalize_text`, `normalize_words`, `align_lines` → `AlignResult`
+  (`matched`, `unconsumed`, `.missing`, `.invented_words`), `casting_map`, and
+  three `Check`-returning functions — `check_all_lines_present`,
+  `check_no_invented_speech`, `check_one_voice_per_line`.
+
+  It exists because a third-party tool was about to depend on `align()` and
+  `normalize()`, which are module-level functions inside a console script. fx-dub's
+  declared surface was two entry points; a consumer building on those internals
+  would have been broken silently by any refactor here. Now the contract is
+  explicit and the refactor is the one that would break loudly.
+
+  **Proven against a second codebase before being declared.** A dogfood swarm on
+  `mcp-tool-shop-org/audiobooker` — an EPUB→audiobook renderer with no video, no
+  music bed and no concurrent speakers — found 3 CRITICAL and 34 HIGH defects behind
+  1235 passing tests. Four are defects in what the audio *says*, and all four are
+  now fixtures in `tests/test_verify.py`: a footnote sentinel narrated aloud, a
+  chapter dropped by a partial render and reported as `success`, three characters
+  collapsed into one voice, and a malformed review tag read out as prose. A clean
+  control sits beside them and must report nothing — a check that only ever fires
+  is as broken as one that never does.
+
+  Zero runtime dependencies, unchanged. Transcription stays the caller's job; that
+  is what keeps the promise of no network egress honest.
+
+- `tests/test_verify.py` — 57 tests. Beyond the contract and the foreign defects,
+  it carries **delegation gates**: tests that sabotage `verify` and require
+  `dialogue_receipt` to break with it. Falsified against a deliberately
+  reintroduced parallel implementation, where six of them go red.
+
+### Changed
+
+- **`dialogue_receipt` is now a consumer of `fxdub.verify`, not a parallel copy.**
+  It computes alignment, the invented-speech verdict and the casting map through
+  the public API and keeps only what makes a receipt a *video dub* receipt: the
+  pause and turn-gap budgets (each traces to a defect caught by ear on one clip,
+  not to a standard), overlap, straggle, clip fit, and the per-line rendering.
+
+  This was the load-bearing requirement, and it is the same defect class the
+  audiobooker swarm spent its day on: that repo's `master_check()` was correct code
+  no render path ever called, so its ACX compliance claim went unverified for two
+  major versions. A public API the shipping tool does not itself exercise is that
+  shape waiting to happen.
+
+  **No CLI behaviour change** — same checks, same output, same exit codes, same
+  flags. `tests/test_dialogue_receipt.py` passes **unedited**, which is the proof.
+
+- `./verify.sh` smoke-tests `fxdub.verify` from the *installed wheel*, so a surface
+  documented in the README but missing from the artifact fails the gate rather than
+  the first consumer's install.
+- 197 → **254 tests**.
+
 ## [1.1.1] — 2026-08-23
 
 ### Fixed

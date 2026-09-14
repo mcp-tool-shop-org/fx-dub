@@ -12,6 +12,12 @@ Two verifiers, and the difference between them is the whole point:
 
 A take can pass the first and be unusable. That is not hypothetical: it is why
 the second one exists.
+
+**Building on fx-dub? Import** :mod:`fxdub.verify` **and nothing else.** It is the
+declared public API: the alignment core that answers "was this script actually
+spoken", with the video-specific thresholds and checks left behind in
+``dialogue_receipt`` where they belong. Everything outside ``verify`` is a console
+script or an internal that may move between releases.
 """
 
 __version__ = "1.1.1"

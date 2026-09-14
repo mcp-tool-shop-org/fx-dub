@@ -30,9 +30,25 @@ if [ -d "$TMPENV/Scripts" ]; then BIN="$TMPENV/Scripts"; else BIN="$TMPENV/bin";
 "$BIN/pip" install --quiet dist/*.whl
 "$BIN/python" - <<'PY'
 import fxdub
-from fxdub import audition_receipt, dialogue_receipt, media_probe, vo_graphs
+from fxdub import audition_receipt, dialogue_receipt, media_probe, verify, vo_graphs
 
 assert fxdub.__version__, "package exposes no version"
+
+# the DECLARED public API must actually ship in the wheel, and work from it.
+# A surface documented in the README but absent from the artifact is worse than
+# no surface: the first consumer discovers it at install time.
+for name in verify.__all__:
+    assert hasattr(verify, name), f"fxdub.verify is missing declared export {name}"
+
+result = verify.align_lines(
+    [{"speaker": "narrator", "text": "Chapter one."},
+     {"speaker": "narrator", "text": "Chapter two."}],
+    [{"text": "Chapter", "start": 0.0, "end": 0.4, "speaker": "s0"},
+     {"text": "one", "start": 0.5, "end": 0.9, "speaker": "s0"},
+     {"text": "surprise", "start": 1.0, "end": 1.4, "speaker": "s0"}],
+)
+assert not verify.check_all_lines_present(result).ok, "a dropped line went unnoticed"
+assert not verify.check_no_invented_speech(result).ok, "unscripted speech went unnoticed"
 
 # the builders must emit a runnable graph shape
 graph = vo_graphs.mix("a.flac", "b.flac", "smoke/mix")
