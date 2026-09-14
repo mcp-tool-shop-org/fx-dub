@@ -4,9 +4,12 @@
 
 **Written 2026-08-23 at the end of session 5 (supersedes all earlier text).** Read [`AGENTS.md`](AGENTS.md) first — it is the durable operating manual — then this file for live state, then query `kb/fxdub.db`.
 
-> **⭐ AMENDED 2026-09-14 (session 6).** One thing below is now stale and one thing is new.
-> **Stale:** the tables say 197 tests — it is **254**, and `AGENTS.md`'s own snapshot said 158 for two sessions before that. Re-measure, don't quote.
-> **New:** `main` carries an unreleased **`fxdub.verify`** — fx-dub's declared public API — and `dialogue_receipt` is reimplemented on top of it. Details in the CHANGELOG's Unreleased section and in `AGENTS.md`. **pyproject is still 1.1.1; nothing is tagged, released or published.** Cutting 1.2.0 is the Director's call (`SELECT * FROM v_open_actions` names the sequence). Everything else below still holds.
+> **⭐ AMENDED 2026-09-14 (session 6) — v1.2.0 IS SHIPPED.**
+> **Version:** v1.2.0 on PyPI (Trusted Publishing, run 34907480151). **Tests: 284**, not the 197 stated below — and `AGENTS.md` said 158 for two sessions before that. Re-measure, don't quote.
+> **New:** `fxdub.verify`, the declared public API; `dialogue_receipt` is reimplemented on it.
+> **Two defects closed that nothing could see.** (1) A committed receipt carried the operator's absolute path — public repo since v1.0.0, caught by the Phase-0 identity gate, published artifacts always clean. (2) CI ran the matrix twice per commit; four of five duplicate pairs were branch-push + tag-push, so every release paid double. Both have detectors proven red against the real pre-fix bytes. **The v1.2.0 tag fired exactly one CI run — the first release that did.**
+> **The carry-forward lesson:** shipcheck 100%, 197 tests and green CI were all true and all insufficient. A defect whose only symptom is extra *success* has no alarm surface. Measure the artifact, never read the config.
+> Everything else below still holds.
 
 > **Verify from receipts and pulled artifacts, never from reports.** That rule has now caught a refuted agent claim, a silent CFG defect, a clobbered file, a phantom line of dialogue, a hallucinated second man, and — six times — a wrong conclusion of *ours*. **This document is testimony. Re-verify anything load-bearing against live ground truth before acting on it.**
 
