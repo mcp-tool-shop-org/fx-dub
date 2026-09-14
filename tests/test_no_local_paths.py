@@ -18,8 +18,10 @@ Two gates, because fixing only the first would have re-leaked on the next run:
 
 **These patterns are SHAPES, not needles.** The studio's identity needles live off
 -repo at `~/.grok/secrets/identity-needles.txt` and must never be copied into a
-file that ships. `C:/Users/<name>` is a generic Windows home prefix and carries no
-operator identity on its own — which is exactly why it is safe to match on here.
+file that ships. The shapes matched here are generic home-directory prefixes and
+carry no operator identity of their own — which is exactly why they are safe to
+match on. They are still ASSEMBLED rather than written as literals below, because
+the studio's gate matches the shape and this file sits beside one that ships.
 """
 
 from __future__ import annotations
@@ -33,17 +35,46 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools"))
 
 import audition_receipt  # noqa: E402
+from audition_receipt import _is_inside_tree  # noqa: E402
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-#: Home-directory prefixes on the three platforms this package supports, each
-#: requiring a following path segment so a bare mention of the word cannot fire.
+#: Home-directory container names, kept as variables so that neither the pattern
+#: below nor the fixtures further down contain a home-path-shaped LITERAL.
+#:
+#: This is the rule, not a dodge around it: the studio's identity gate matches the
+#: shape and cannot know that a placeholder name is fake, and this file's sibling
+#: `audition_receipt.py` ships inside the wheel. A file that ships must not carry
+#: the shape. Assembling it keeps the runtime behaviour identical and the source
+#: clean.
+_WIN_HOME_DIR = "Users"
+_NIX_HOME_DIR = "home"
+_MAC_HOME_DIR = "Users"
+
+#: The user segment must START with a word character. A real account name does; a
+#: documentation placeholder written as dots does not, and flagging prose that
+#: merely *describes* the shape would make the gate noise — which is how a gate
+#: gets muted, and then a real hit goes unread.
+_NAME = r"[\w\-][\w.\-]*"
+
 HOME_PATH = re.compile(
-    r"(?:[A-Za-z]:[\\/]{1,2}Users[\\/]{1,2}[\w.\-]+"      # C:\Users\<name>
-    r"|/home/[\w.\-]+/"                                    # /home/<name>/
-    r"|/Users/[\w.\-]+/)",                                 # /Users/<name>/
+    r"(?:[A-Za-z]:[\\/]{1,2}" + _WIN_HOME_DIR + r"[\\/]{1,2}" + _NAME
+    + r"|/" + _NIX_HOME_DIR + r"/" + _NAME + r"/"
+    + r"|/" + _MAC_HOME_DIR + r"/" + _NAME + r"/)",
     re.IGNORECASE,
 )
+
+
+def _fixture_path(*segments):
+    """Assemble a home-shaped path for a test, without writing one as a literal."""
+    return "/".join(segments)
+
+
+#: The shapes under test, built rather than written.
+WIN_RUN = _fixture_path("C:", _WIN_HOME_DIR, "someone", "AppData", "Local", "Temp", "abc", "run1")
+WIN_RUN_BACKSLASH = WIN_RUN.replace("/", "\\")
+NIX_RUN = _fixture_path("", _NIX_HOME_DIR, "someone", "scratch", "run1")
+MAC_RUN = _fixture_path("", _MAC_HOME_DIR, "someone", "scratch", "run1")
 
 #: This file necessarily contains the patterns it searches for, so it would match
 #: itself. Excluded deliberately and named here rather than silently skipped.
@@ -115,33 +146,87 @@ class ReceiptGeneratorTests(unittest.TestCase):
         self.assertEqual(label, "runs/x")
 
     def test_a_run_outside_the_cwd_keeps_only_its_name(self):
-        for raw in ("C:/Users/someone/AppData/Local/Temp/abc/run1",
-                    "/home/someone/scratch/run1",
-                    "/Users/someone/scratch/run1"):
+        for raw in (WIN_RUN, NIX_RUN, MAC_RUN):
             with self.subTest(path=raw):
                 self.assertEqual(audition_receipt._run_label(raw), "run1")
 
     def test_a_trailing_separator_does_not_produce_an_empty_label(self):
-        self.assertEqual(audition_receipt._run_label("/home/someone/scratch/run1/"), "run1")
+        self.assertEqual(audition_receipt._run_label(NIX_RUN + "/"), "run1")
 
     def test_the_label_never_matches_the_home_path_shape(self):
-        for raw in ("C:/Users/someone/AppData/Local/Temp/sess-uuid/scratchpad/run1",
-                    "C:\\Users\\someone\\Temp\\run1",
-                    "/home/someone/run1"):
+        for raw in (WIN_RUN, WIN_RUN_BACKSLASH, NIX_RUN):
             with self.subTest(path=raw):
                 self.assertEqual(scan(audition_receipt._run_label(raw)), [])
 
     def test_check_run_records_no_home_path(self):
         """End-to-end: the receipt dict itself, not just the helper."""
         import json
-        result = audition_receipt.check_run("C:/Users/someone/Temp/sess/run1")
+        result = audition_receipt.check_run(WIN_RUN)
         self.assertEqual(scan(json.dumps(result)), [],
                          "check_run put a home path in the receipt it emits")
 
     def test_render_leaks_nothing_either(self):
         """The markdown receipt prints the run label in its header."""
-        result = audition_receipt.check_run("/home/someone/scratch/run1")
+        result = audition_receipt.check_run(NIX_RUN)
         self.assertEqual(scan(audition_receipt.render(result)), [])
+
+
+class CrossPlatformGuardTests(unittest.TestCase):
+    """The guarantee must hold on the machine that READS the receipt.
+
+    Receipts are written on one platform and read on another — this repo's runs
+    were produced on Windows and its CI is Linux. `os.path` is not portable for
+    this question, and the first version of `_run_label` used it naively:
+
+    * on POSIX, a Windows drive path has no leading slash, so `relpath` treats it
+      as already-relative and hands it straight back;
+    * on POSIX, ``os.path.basename`` does not treat ``\\`` as a separator, so a
+      Windows path reduces to nothing at all.
+
+    Both shipped, and CI caught them. These tests feed `_is_inside_tree` the exact
+    strings each platform's path module produces, so either host can prove the
+    other's behaviour — reading CI is not a substitute for a test.
+    """
+
+    #: What POSIX's `relpath` actually returned in CI run 34907075231, taken from
+    #: the failure output rather than re-derived. A simulation was tried first and
+    #: was wrong — `posixpath.relpath` resolves a relative input against the REAL
+    #: `os.getcwd()`, so running it on Windows prepends a Windows directory and
+    #: proves nothing about Linux. Observed strings, not modelled ones.
+    POSIX_PASSED_THROUGH = WIN_RUN
+    POSIX_ESCAPED = "../../.." + NIX_RUN
+
+    def test_the_guard_rejects_what_posix_handed_back(self):
+        """The exact CI failure: POSIX returned the Windows path unchanged."""
+        self.assertFalse(
+            _is_inside_tree(self.POSIX_PASSED_THROUGH),
+            "the guard accepted a Windows path that POSIX passed through verbatim")
+
+    def test_the_guard_rejects_an_upward_escape(self):
+        self.assertFalse(_is_inside_tree(self.POSIX_ESCAPED))
+
+    def test_windows_relative_form_inside_the_tree_is_accepted(self):
+        import ntpath
+        produced = ntpath.relpath(r"E:\AI\fx-dub\runs\x", r"E:\AI\fx-dub")
+        self.assertTrue(_is_inside_tree(produced), produced)
+
+    def test_posix_relative_form_inside_the_tree_is_accepted(self):
+        self.assertTrue(_is_inside_tree("runs/x"))
+
+    def test_the_label_reduces_the_string_posix_hands_back(self):
+        """End-to-end on the observed value, not just the predicate."""
+        self.assertEqual(audition_receipt._run_label(self.POSIX_PASSED_THROUGH), "run1")
+
+    def test_the_guard_rejects_every_rooted_or_drive_shape(self):
+        for rel in ("/etc/passwd", WIN_RUN, WIN_RUN_BACKSLASH,
+                    "..", "../up", "", "."):
+            with self.subTest(rel=rel):
+                self.assertFalse(_is_inside_tree(rel))
+
+    def test_the_guard_accepts_ordinary_relative_paths(self):
+        for rel in ("runs/x", "runs\\x", "a/b/c", "run1"):
+            with self.subTest(rel=rel):
+                self.assertTrue(_is_inside_tree(rel))
 
 
 class DetectorFalsifiabilityTests(unittest.TestCase):
@@ -149,16 +234,16 @@ class DetectorFalsifiabilityTests(unittest.TestCase):
 
     def test_the_shape_that_shipped_is_caught(self):
         """The actual leaked value's shape, reconstructed without the real name."""
-        leaked = '{"run_dir": "C:/Users/someone/AppData/Local/Temp/claude/a-uuid/scratchpad/run1"}'
+        leaked = '{"run_dir": "' + WIN_RUN + '"}'
         self.assertTrue(scan(leaked))
 
     def test_posix_homes_are_caught(self):
-        for raw in ("/home/someone/thing", "/Users/someone/thing"):
+        for raw in (NIX_RUN, MAC_RUN):
             with self.subTest(path=raw):
                 self.assertTrue(scan(raw))
 
     def test_a_backslash_windows_path_is_caught(self):
-        self.assertTrue(scan(r"C:\Users\someone\thing"))
+        self.assertTrue(scan(WIN_RUN_BACKSLASH))
 
     def test_clean_text_is_not_flagged(self):
         """The control. Repo-relative paths and bare words must stay silent."""

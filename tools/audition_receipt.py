@@ -65,6 +65,11 @@ FIXTURE_DURATION_S = 10.062
 DURATION_TOLERANCE_S = 0.5
 
 
+#: A drive-letter prefix is absolute on Windows and invisible to POSIX's os.path,
+#: which is why this is matched by hand rather than left to os.path.isabs.
+_WINDOWS_DRIVE = re.compile(r"^[A-Za-z]:/")
+
+
 def _run_label(run_dir: str) -> str:
     """The run's identity for the receipt, without the operator's filesystem.
 
@@ -77,14 +82,42 @@ def _run_label(run_dir: str) -> str:
     Earned 2026-09-14: a committed receipt in ``runs/`` carried the full temp path
     of the session that generated it, and the repo is public. Fixing the one file
     without fixing this function would have re-leaked on the next run.
+
+    **The guarantee is platform-independent, and that is the hard part.** A receipt
+    is written on one machine and read on another — this repo's own CI is Linux and
+    the runs were produced on Windows. ``os.path`` is not portable here: on POSIX,
+    a Windows drive path has no leading slash so it is treated as a *relative* path
+    and handed straight back, and ``os.path.basename`` does not treat ``\\`` as a
+    separator at all. Both mistakes were in the first version of this function, and
+    CI caught them.
     """
+    text = str(run_dir or "").replace("\\", "/")
+    segments = [s for s in text.split("/") if s and s != "."]
+    tail = segments[-1] if segments else ""
+
     try:
         rel = os.path.relpath(run_dir, os.getcwd())
-    except ValueError:  # different drive on Windows — no relative path exists
-        return os.path.basename(os.path.normpath(run_dir))
-    if rel == os.curdir or rel.startswith(os.pardir):
-        return os.path.basename(os.path.normpath(run_dir))
-    return rel.replace(os.sep, "/")
+    except ValueError:  # different drive on Windows — no relative form exists
+        return tail
+    return rel.replace(os.sep, "/") if _is_inside_tree(rel) else tail
+
+
+def _is_inside_tree(rel: str) -> bool:
+    """Is this relative path provably inside the working tree?
+
+    Split out so the cross-platform guarantee is testable from either host: the
+    tests feed it the exact strings ``posixpath`` and ``ntpath`` each produce, so
+    a Windows developer can prove the POSIX behaviour without a Linux machine.
+    Pushing and reading CI is not a substitute — that is how the first version of
+    this shipped.
+    """
+    rel = (rel or "").replace("\\", "/")
+    if not rel or rel == "." or rel == ".." or rel.startswith("../"):
+        return False
+    # Rooted, or still carrying a drive letter: a path on someone's machine, not a
+    # property of the run. POSIX's os.path hands a Windows drive path back
+    # unchanged because it has no leading slash, so this is the check that holds.
+    return not (rel.startswith("/") or _WINDOWS_DRIVE.match(rel))
 
 
 def _find(run_dir: str, pattern: str) -> str | None:

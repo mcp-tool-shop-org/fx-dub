@@ -165,7 +165,7 @@ checkbox-shaped gate can see.
 | Handbook | ✅ | **6 → 7 pages** — added *The Public API* |
 | GitHub metadata | ✅ | description, homepage, **11 topics** (+`audiobook`) |
 
-Suite: **197 → 277 tests**, `verify.sh` PASS, identity scan `RESULT CLEAN`.
+Suite: **197 → 284 tests**, `verify.sh` PASS, identity scan `RESULT CLEAN`.
 
 **The lesson worth carrying:** a 100% pass rate was true and insufficient. Both
 defects produced *more* successful output than a healthy repo — a saved receipt,

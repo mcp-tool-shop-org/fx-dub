@@ -284,7 +284,7 @@ and closed while the off-frame character speaks.
 
 It scores **19/20** once you pass `--scene`, and the failure is real: the delivered
 run's caption claims two men over a one-man shot. That check caught a defect that had
-been shipping green. **277 tests**, CI green. Full history in the
+been shipping green. **284 tests**, CI green. Full history in the
 [CHANGELOG](CHANGELOG.md).
 
 This release adds [`fxdub.verify`](#the-public-api--fxdubverify) — the declared,

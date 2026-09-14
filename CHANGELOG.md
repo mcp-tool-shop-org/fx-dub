@@ -20,6 +20,15 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   re-leak. `_run_label()` now records the path relative to the working directory when the
   run lives under it, and the bare directory name otherwise. The receipt key is unchanged.
 
+  **The reduction is platform-independent, which is the part that took two attempts.** A
+  receipt is written on one machine and read on another — these runs were produced on
+  Windows and CI is Linux — and `os.path` is not portable for this question: on POSIX a
+  Windows drive path has no leading slash, so `relpath` treats it as already-relative and
+  hands it straight back, and `basename` does not treat `\` as a separator at all. The
+  first version used `os.path` naively and leaked on Linux. CI caught it; the guard is now
+  a separate `_is_inside_tree()` tested against the exact strings each platform produces,
+  so either host can prove the other's behaviour instead of pushing and reading CI.
+
   Nothing in the suite could see it: 197 tests, shipcheck at 100% with every hard gate
   passing, and green CI across two releases. Shipcheck's gate A3 covers secrets and
   tokens, not operator identity. `tests/test_no_local_paths.py` closes that — it scans
@@ -92,7 +101,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `./verify.sh` smoke-tests `fxdub.verify` from the *installed wheel*, so a surface
   documented in the README but missing from the artifact fails the gate rather than
   the first consumer's install.
-- 197 → **277 tests** (57 for the public API, 11 for the workflow triggers, 12 for the
+- 197 → **284 tests** (57 for the public API, 11 for the workflow triggers, 19 for the
   local-path gate).
 
 ## [1.1.1] — 2026-08-23
