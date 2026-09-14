@@ -2,8 +2,24 @@ name: ci
 
 # Paths-gated, per the org's Actions rules: CI minutes are finite and this repo
 # carries large run artifacts that must never trigger a build.
+#
+# ONE RUN PER COMMIT. `push` is scoped to the default branch because an
+# unrestricted push trigger fires a SECOND full matrix alongside `pull_request`
+# on a PR branch, and a THIRD on the tag at release time — the tag and the main
+# push carry the same SHA. Measured 2026-09-14: five duplicate-SHA pairs in the
+# visible run history (4 × main+tag, 1 × push+pull_request).
+#
+# The previous attempt fixed this in the concurrency group and could not work:
+# `github.head_ref` is empty on a push, so the two events resolved to different
+# group names, and the main/tag pair runs minutes apart where cancel-in-progress
+# never applies at all. The duplicate has to be removed at the trigger — a run
+# that is queued and then cancelled has already spent minutes.
+#
+# Consequence, deliberately accepted: a branch with no open PR gets no automatic
+# run. Use `workflow_dispatch`, or open the PR.
 on:
   push:
+    branches: [main]
     paths:
       - 'pyproject.toml'
       - 'tools/**'
@@ -28,7 +44,25 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  # Keyed on the BARE BRANCH NAME, and on a ref rather than a SHA.
+  #
+  # Ref, not SHA: this is what cancels a SUPERSEDED commit's run when you push
+  # again to the same branch — the saving that actually recurs here. A SHA-keyed
+  # group would collapse two events on one commit but could never cancel an older
+  # commit's run, which is strictly worse.
+  #
+  # Bare name, not `github.head_ref || github.ref`: that form resolves to
+  # `refs/heads/x` on a push and `x` on a pull_request, so the two never share a
+  # group. It was applied here as a double-fire fix and did not work.
+  # `github.ref_name` is already the short name on a push, and
+  # `event.pull_request.head.ref` is the same short name on a PR.
+  #
+  # Honest scope: the trigger filter above is what this branch MEASURED as fixing
+  # the duplicate. Since `push` can no longer target a PR branch, the two events
+  # cannot collide here any more, so this expression's collapse behaviour is not
+  # exercised by this configuration — it is belt-and-braces against the filter
+  # being widened later, and against this file being copied as a template.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
 
 permissions:
