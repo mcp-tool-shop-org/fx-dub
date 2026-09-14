@@ -4,7 +4,40 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] — 2026-09-14
+
+### Fixed
+
+- **A committed receipt carried the absolute path of the machine that produced it.**
+  `runs/2026-08-22-audition-01/receipt.json` recorded its `run_dir` as the full session
+  temp path — home directory, username, session UUID — and has been in this public repo
+  since v1.0.0. **The published artifacts were never affected:** `runs/` is not in the
+  sdist or the wheel, and both were re-scanned to confirm it. This was a repo-surface
+  exposure only.
+
+  The root cause was `audition_receipt.check_run()` returning `{"run_dir": run_dir}`
+  verbatim, so scrubbing the one file would have fixed nothing — the next receipt would
+  re-leak. `_run_label()` now records the path relative to the working directory when the
+  run lives under it, and the bare directory name otherwise. The receipt key is unchanged.
+
+  Nothing in the suite could see it: 197 tests, shipcheck at 100% with every hard gate
+  passing, and green CI across two releases. Shipcheck's gate A3 covers secrets and
+  tokens, not operator identity. `tests/test_no_local_paths.py` closes that — it scans
+  every git-tracked file and the receipt generator itself, and is proven red against the
+  actual leaked bytes recovered from git history.
+
+- **CI ran twice on the same commit, and the previous fix for it did not work.** The
+  concurrency group was set to `${{ github.head_ref || github.ref }}`; `head_ref` is empty
+  on a push, so the two events resolved to different group names and nothing was
+  cancelled. Measured by grouping run history by head SHA: five duplicate pairs, and
+  **four of them were branch-push + tag-push** — every release since v1.0.0 has paid for
+  its test matrix twice. That class is unreachable by any concurrency expression, because
+  those runs are minutes apart.
+
+  Fixed at the trigger: `on.push` is now scoped to `branches: [main]`. A branch with no
+  open PR gets no automatic run; `workflow_dispatch` is the fallback.
+  `tests/test_workflows.py` parses the `on:` block and fails any workflow that can fire
+  twice for one commit.
 
 ### Added
 
@@ -59,7 +92,8 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `./verify.sh` smoke-tests `fxdub.verify` from the *installed wheel*, so a surface
   documented in the README but missing from the artifact fails the gate rather than
   the first consumer's install.
-- 197 → **254 tests**.
+- 197 → **277 tests** (57 for the public API, 11 for the workflow triggers, 12 for the
+  local-path gate).
 
 ## [1.1.1] — 2026-08-23
 

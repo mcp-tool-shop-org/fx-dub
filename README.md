@@ -106,10 +106,7 @@ graph = vo_graphs.transcribe("<storage-key>.flac", "run/words")
 
 ## The public API — `fxdub.verify`
 
-> **Unreleased.** On `main`, not in `pip install fx-dub` yet — the published 1.1.1
-> has no `verify` module. Install from source to use it today.
-
-The two console scripts verify a *video dub*. The core underneath them — match a
+**New in v1.2.0.** The two console scripts verify a *video dub*. The core underneath them — match a
 script against what was actually spoken — is not specific to video, and it is
 exported as a declared, stable surface so other tools can build on it instead of
 importing internals that may move.
@@ -277,20 +274,24 @@ dialogue by 7 dB while every other check stayed green.
 
 ## Status
 
-**v1.1.1 — the pipeline is delivered, both receipts are green, and the picture is
-lip-synced.** A two-character night-street scene scores **19/19** on the container
+**v1.2.0 — the pipeline is delivered, both receipts are green, the picture is
+lip-synced, and the alignment core is now a declared public API.** A two-character
+night-street scene scores **19/19** on the container
 contract (48 kHz, −18.09 LUFS, dialogue +11.17 LU over the bed, 161 frames intact,
 10.069 s) and **11/11** on the content contract. The lip-synced variant holds the
 same contract — 832 × 480, 161 frames, both tracks — with MAC's mouth on his line
 and closed while the off-frame character speaks.
 
 It scores **19/20** once you pass `--scene`, and the failure is real: the delivered
-run's caption claims two men over a one-man shot. That check is new in this release
-and it caught a defect that had been shipping green. 254 tests, CI green. Full
-history in the [CHANGELOG](CHANGELOG.md).
+run's caption claims two men over a one-man shot. That check caught a defect that had
+been shipping green. **277 tests**, CI green. Full history in the
+[CHANGELOG](CHANGELOG.md).
 
-`main` additionally carries the unreleased [`fxdub.verify`](#the-public-api--fxdubverify)
-public API; see the CHANGELOG's Unreleased section.
+This release adds [`fxdub.verify`](#the-public-api--fxdubverify) — the declared,
+medium-agnostic surface other tools build on — and closes two defects that nothing in
+the suite could see: a committed receipt carrying the absolute path of the machine that
+wrote it, and a CI trigger that ran the full matrix twice on every release. Both now
+have detectors, each proven red against the real pre-fix bytes.
 
 | Piece | State |
 |---|---|

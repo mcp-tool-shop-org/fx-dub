@@ -118,3 +118,56 @@ items on a Python CLI — and stay true until fx-dub becomes one of those things
 The three behavioural ones were re-checked mechanically rather than carried
 forward on trust; the method for each is recorded in `SHIP_GATE.md` so the next
 release can repeat it instead of re-deriving it.
+
+---
+
+## v1.2.0 re-audit — 2026-09-14
+
+`npx @mcptoolshop/shipcheck audit` → **23 checked / 0 unchecked / 14 skipped,
+100%, all hard gates pass.** Actual output, not an estimate.
+
+### What the walk found
+
+The audit was green and **two real defects were sitting behind it**, both shipping
+since v1.0.0. Neither is a shipcheck gap in the sense of a missed checkbox — they
+are defects whose only symptom is extra *success*, which is the class no
+checkbox-shaped gate can see.
+
+- **A committed receipt carried the operator's absolute path.** The Phase-0
+  identity scan halted on `runs/2026-08-22-audition-01/receipt.json`, which
+  recorded its `run_dir` as the full session temp path — home directory, username,
+  session UUID — in a public repo. Published artifacts were never affected
+  (`runs/` is in neither the sdist nor the wheel; both re-scanned to confirm).
+
+  Gate A3 covers secrets and tokens. It does not cover operator identity, and the
+  identity scan is a **separate hard gate of the same class** — it must run at
+  Phase 0, again before the Phase-6 push, and against the leaving artifact.
+
+  Root cause was `audition_receipt.check_run()` recording whatever absolute path it
+  was handed, so scrubbing the file alone would have re-leaked on the next run.
+  Closed by `_run_label()` plus `tests/test_no_local_paths.py` (12 tests), which
+  scans every git-tracked file and the generator itself, and is **proven red
+  against the actual leaked bytes recovered from git history.**
+
+- **CI ran the full matrix twice per commit, and the commit that fixed it did
+  not.** Measured by grouping run history by head SHA: five duplicate pairs, four
+  of them branch-push + tag-push — every release paid twice. Closed at the trigger
+  (`on.push.branches: [main]`) plus `tests/test_workflows.py` (11 tests), proven
+  red against the real pre-fix workflow.
+
+### Gate E (identity), re-walked
+
+| | | |
+|---|---|---|
+| Logo | ✅ | brand repo, unchanged |
+| Translations | ✅ | 7 languages, regenerated **before** the tag |
+| Landing page | ✅ | builds, pagefind index present |
+| Handbook | ✅ | **6 → 7 pages** — added *The Public API* |
+| GitHub metadata | ✅ | description, homepage, **11 topics** (+`audiobook`) |
+
+Suite: **197 → 277 tests**, `verify.sh` PASS, identity scan `RESULT CLEAN`.
+
+**The lesson worth carrying:** a 100% pass rate was true and insufficient. Both
+defects produced *more* successful output than a healthy repo — a saved receipt,
+two green checks — so every alarm surface read normal. Verify by measuring the
+artifact, never by reading the config.

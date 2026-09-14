@@ -65,6 +65,28 @@ FIXTURE_DURATION_S = 10.062
 DURATION_TOLERANCE_S = 0.5
 
 
+def _run_label(run_dir: str) -> str:
+    """The run's identity for the receipt, without the operator's filesystem.
+
+    A receipt is committed and published. An absolute path names the machine that
+    produced it — a home directory, a username, a scratch UUID — and none of that
+    is a property of the run being measured. This records the path relative to the
+    working directory when the run lives under it, and the bare directory name
+    otherwise.
+
+    Earned 2026-09-14: a committed receipt in ``runs/`` carried the full temp path
+    of the session that generated it, and the repo is public. Fixing the one file
+    without fixing this function would have re-leaked on the next run.
+    """
+    try:
+        rel = os.path.relpath(run_dir, os.getcwd())
+    except ValueError:  # different drive on Windows — no relative path exists
+        return os.path.basename(os.path.normpath(run_dir))
+    if rel == os.curdir or rel.startswith(os.pardir):
+        return os.path.basename(os.path.normpath(run_dir))
+    return rel.replace(os.sep, "/")
+
+
 def _find(run_dir: str, pattern: str) -> str | None:
     hits = sorted(glob.glob(os.path.join(run_dir, pattern)))
     return hits[0] if hits else None
@@ -326,7 +348,9 @@ def check_run(run_dir: str, bed_gain_db: float = DEFAULT_BED_GAIN_DB,
                    "trap: Florence-2 captioned two men into a one-man shot and the "
                    "caption drives the audio prompt")
 
-    return {"run_dir": run_dir, "checks": checks, "measured": measured}
+    # Never the caller's absolute path — see _run_label. The key stays `run_dir`
+    # so the receipt schema is unchanged for anything already reading it.
+    return {"run_dir": _run_label(run_dir), "checks": checks, "measured": measured}
 
 
 def render(result: dict) -> str:

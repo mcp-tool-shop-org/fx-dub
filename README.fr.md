@@ -84,6 +84,30 @@ graph = vo_graphs.transcribe("<storage-key>.flac", "run/words")
 # -> API-format dict, ready for your own submit path. Nothing is sent from here.
 ```
 
+## L’API publique — `fxdub.verify`
+
+**Nouveauté dans la version 1.2.0.** Les deux scripts de console vérifient un *doublage vidéo*. Le moteur sous-jacent — qui compare un script à ce qui a été réellement dit — n’est pas spécifique à la vidéo, et il est exporté en tant qu’interface déclarée et stable, afin que d’autres outils puissent s’y appuyer au lieu d’importer des éléments internes qui pourraient être modifiés.
+
+```python
+from fxdub import verify
+
+lines = [{"speaker": "narrator", "text": "Chapter two continues the tale."}]
+result = verify.align_lines(lines, words)      # words: the transcript above
+
+result.missing            # scripted lines that were never spoken
+result.invented_words     # rendered tokens no scripted line claimed
+
+verify.check_all_lines_present(result)   # -> Check(name, ok, detail, traces_to)
+verify.check_no_invented_speech(result)
+verify.check_one_voice_per_line(result)
+```
+
+Ces trois éléments s’appliquent à n’importe quel processus qui transforme un texte écrit en parole synthétisée : **une ligne demandée par le script doit être prononcée, une ligne qu’il n’a pas demandée ne doit pas l’être, et un personnage doit être interprété par une seule voix, la sienne.** Ils ont été testés par rapport à une deuxième base de code avant d’être déclarés : quatre défauts de contenu détectés dans un moteur de rendu EPUB vers livre audio (une note de bas de page narrée, un chapitre supprimé lors d’un rendu partiel et signalé comme une réussite, trois personnages réduits à une seule voix, un balisage lu à haute voix comme du texte) sont désormais intégrés dans [`tests/test_verify.py`](tests/test_verify.py), à côté d’un contrôle de référence qui ne doit rien signaler.
+
+Ce qui n’est **pas** inclus dans l’API : la transcription (fx-dub utilise les moments où les mots sont prononcés, c’est pourquoi il n’a aucune dépendance), les seuils (chacun d’eux est lié à un défaut détecté à l’oreille dans un média donné, ils appartiennent donc à l’appelant qui gère la politique) et les vérifications spécifiques au média : chevauchement, décalage en milieu de ligne, ajustement de la séquence, profondeur de l’atténuation, légende par rapport au doublage. Une vérification qui ne peut pas être effectuée de manière significative dans votre média est pire que l’absence de vérification, car elle est interprétée comme une réussite.
+
+`fxdub-dialogue` est lui-même un consommateur de cette API : il calcule ses verdicts de contenu via `verify` et n’ajoute que ce qui fait d’un reçu un reçu de *doublage*. Cela est appliqué par des tests qui font échouer `verify` et exigent que l’interface en ligne de commande échoue également, de sorte que le chemin public ne puisse pas devenir silencieusement un chemin que personne n’utilise.
+
 ## Créateurs de graphiques
 
 `fxdub.vo_graphs` crée également les graphiques pour l’étape du doublage : conception vocale, référence audio avec le même moteur, clonage et synthèse vocale, assemblage, insertion dans la chronologie, mixage, ainsi que l’étape de l’image : extraction d’images, synchronisation labiale et multiplexage. Ils existent parce que l’alternative — taper manuellement du JSON API dans une fenêtre de chat — produit des graphiques qui disparaissent avec la session et réintroduisent silencieusement des défauts pour lesquels on a déjà payé.
@@ -183,10 +207,11 @@ vous indique quelles informations vous devez divulguer en fonction du lieu où v
 
 ## État
 
-**v1.1.1 – la séquence est terminée, les deux flux sont validés (indiqués en vert) et l’image est synchronisée avec le son.** Une scène nocturne avec deux personnages obtient un score de **19/19** pour le contrat du conteneur (48 kHz, −18,09 LUFS, dialogue +11,17 LU au-dessus de la musique d’ambiance, 161 images intactes, 10,069 s) et **11/11** pour le contrat du contenu. La variante synchronisée conserve les mêmes paramètres : 832 × 480, 161 images, les deux pistes audio ; la bouche de MAC est visible lorsqu’il parle et fermée lorsque le personnage hors champ prend la parole.
+**Version 1.2.0 : le processus est livré, les deux reçus sont valides, l’image est synchronisée avec les lèvres, et le moteur d’alignement est désormais une API publique déclarée.** Une scène nocturne avec deux personnages obtient un score de **19/19** sur le contrat du conteneur (48 kHz, −18,09 LUFS, dialogue +11,17 LU par rapport à la base, 161 images intactes, 10,069 s) et de **11/11** sur le contrat du contenu. La variante synchronisée avec les lèvres conserve le même contrat : 832 × 480, 161 images, les deux pistes, avec la bouche de MAC sur sa ligne et fermée pendant que le personnage hors cadre parle.
 
-Elle obtient un score de **19/20** une fois que vous passez `--scene`, et l’échec est réel : les sous-titres du fichier livré indiquent la présence de deux hommes dans une scène où il n’y en a qu’un. Ce contrôle est nouveau dans cette version
-et il a détecté un défaut qui avait été validé auparavant. 189 tests, CI valide. Historique complet dans le [JOURNAL DES MODIFICATIONS](CHANGELOG.md).
+Elle obtient un score de **19/20** une fois que vous passez `--scene`, et l’échec est réel : la légende de l’exécution fournie indique deux hommes dans une scène où il n’y a qu’un seul personnage. Cette vérification a détecté un défaut qui était passé inaperçu. **277 tests**, CI valide. Historique complet dans le [CHANGELOG](CHANGELOG.md).
+
+Cette version ajoute [`fxdub.verify`](#the-public-api--fxdubverify) : l’interface déclarée et indépendante du média sur laquelle d’autres outils peuvent s’appuyer, et elle corrige deux défauts que rien dans la suite de tests n’a pu détecter : un reçu enregistré contenant le chemin absolu de la machine qui l’a créé, et un déclencheur CI qui exécutait la matrice complète deux fois à chaque publication. Les deux ont désormais des détecteurs, chacun ayant été testé et s’étant avéré invalide par rapport aux données réelles avant la correction.
 
 | Élément | État |
 |---|---|

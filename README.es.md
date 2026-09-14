@@ -84,6 +84,30 @@ graph = vo_graphs.transcribe("<storage-key>.flac", "run/words")
 # -> API-format dict, ready for your own submit path. Nothing is sent from here.
 ```
 
+## La API pública — `fxdub.verify`
+
+**Novedad en la versión 1.2.0.** Los dos scripts de la consola verifican un *doblaje de video*. El núcleo subyacente, que compara un guion con lo que realmente se dijo, no es específico para video y se exporta como una interfaz declarada y estable para que otras herramientas puedan construir sobre ella en lugar de importar componentes internos que podrían cambiar.
+
+```python
+from fxdub import verify
+
+lines = [{"speaker": "narrator", "text": "Chapter two continues the tale."}]
+result = verify.align_lines(lines, words)      # words: the transcript above
+
+result.missing            # scripted lines that were never spoken
+result.invented_words     # rendered tokens no scripted line claimed
+
+verify.check_all_lines_present(result)   # -> Check(name, ok, detail, traces_to)
+verify.check_no_invented_speech(result)
+verify.check_one_voice_per_line(result)
+```
+
+Estos tres elementos se aplican a cualquier flujo de trabajo que convierta texto escrito en voz generada: **una línea que el guion solicita debe ser pronunciada, una línea que no solicita no debe serlo, y un personaje debe ser interpretado por una sola voz, la suya.** Se probaron con una segunda base de código antes de ser declarados; cuatro defectos de contenido detectados en un renderizador de EPUB a audiolibro (una nota al pie narrada, un capítulo omitido por un renderizado parcial y reportado como éxito, tres personajes combinados en una sola voz, marcas leídas en voz alta como prosa) se encuentran en [`tests/test_verify.py`](tests/test_verify.py), junto con un control limpio que no debe reportar nada.
+
+Lo que deliberadamente **no** está en la API: transcripción (fx-dub utiliza los tiempos de las palabras que se le proporcionan; por eso no tiene dependencias), umbrales (cada uno de ellos se relaciona con un defecto detectado por el oído en un medio específico, por lo que pertenecen al llamante que posee la política) y las comprobaciones específicas del medio: superposición, retraso a mitad de la línea, ajuste de clip, profundidad de atenuación, subtítulos frente a elenco. Una comprobación que no puede activarse de manera significativa en su medio es peor que no tener ninguna comprobación, porque se interpreta como un resultado positivo.
+
+`fxdub-dialogue` es en sí mismo un consumidor de esta API: calcula sus resultados a través de `verify` y agrega solo lo que convierte un registro en un registro de *doblaje*. Esto se aplica mediante pruebas que fallan `verify` y requieren que la CLI falle también, por lo que la ruta pública no puede convertirse silenciosamente en una que nadie utilice.
+
 ## Constructores de gráficos
 
 `fxdub.vo_graphs` también crea los gráficos de la etapa de voz en off: diseño de voz, referencia de audio del mismo motor, clonar y hablar, empalmar, colocar en la línea de tiempo, mezclar; y la etapa de imagen: extracción de fotogramas, sincronización labial y multiplexación. Existen porque la alternativa (escribir manualmente el JSON de la API en una ventana de chat) produce gráficos que desaparecen con la sesión y reintroducen silenciosamente defectos por los que ya se ha pagado.
@@ -160,9 +184,11 @@ video ─► describe (Florence-2, pinned, single mid-clip frame)
 
 ## Estado
 
-**v1.1.1: se entrega la secuencia completa, ambos indicadores están en verde y la imagen está sincronizada con el audio.** Una escena nocturna con dos personajes obtiene una puntuación de **19/19** en el contrato del contenedor (48 kHz, −18,09 LUFS, diálogo +11,17 LU sobre la banda sonora, 161 fotogramas intactos, 10,069 s) y **11/11** en el contrato de contenido. La variante sincronizada mantiene el mismo contrato: 832 × 480, 161 fotogramas, ambas pistas; la boca del personaje MAC está abierta mientras habla y cerrada cuando no lo hace.
+**Versión 1.2.0: el flujo de trabajo se entrega, ambos registros son positivos, la imagen está sincronizada con los labios y el núcleo de alineación ahora es una API pública declarada.** Una escena nocturna con dos personajes obtiene una puntuación de **19/19** en el contrato del contenedor (48 kHz, −18.09 LUFS, diálogo +11.17 LU sobre el fondo, 161 fotogramas intactos, 10.069 s) y **11/11** en el contrato de contenido. La variante sincronizada con los labios mantiene el mismo contrato: 832 × 480, 161 fotogramas, ambas pistas, con la boca de MAC en su línea y cerrada mientras el personaje fuera de plano habla.
 
-Obtiene una puntuación de **19/20** una vez que pasas `--scene`, y el fallo es real: el subtítulo de la versión entregada indica dos hombres en una escena con un solo hombre. Esta comprobación es nueva en esta versión y detectó un defecto que se había estado enviando como correcto. 197 pruebas, CI en verde. Historial completo en [CHANGELOG](CHANGELOG.md).
+Obtiene una puntuación de **19/20** una vez que se pasa `--scene`, y el fallo es real: el registro entregado afirma que hay dos hombres en una escena de un solo hombre. Esta comprobación detectó un defecto que había estado pasando desapercibido. **277 pruebas**, CI en verde. Historial completo en el [CHANGELOG](CHANGELOG.md).
+
+Esta versión agrega [`fxdub.verify`](#the-public-api--fxdubverify): la interfaz declarada, independiente del medio, sobre la que otras herramientas pueden construir, y corrige dos defectos que ninguna de las pruebas existentes podía detectar: un registro confirmado que contiene la ruta absoluta de la máquina que lo escribió y un disparador de CI que ejecutaba la matriz completa dos veces en cada versión. Ambos ahora tienen detectores, cada uno de los cuales se ha probado y ha fallado con los bytes reales previos a la corrección.
 
 | Elemento | Estado |
 |---|---|

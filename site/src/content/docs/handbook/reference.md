@@ -2,7 +2,7 @@
 title: Reference
 description: CLI flags, exit codes, check names, and the Python API.
 sidebar:
-  order: 5
+  order: 6
 ---
 
 ## fxdub-dialogue
@@ -85,8 +85,28 @@ partial verification.
 ## Python API
 
 ```python
+from fxdub import verify                                    # the DECLARED surface
 from fxdub import audition_receipt, dialogue_receipt, media_probe, vo_graphs
 ```
+
+### `verify` — the public API
+
+**Building a tool on fx-dub? Import this and nothing else.** Everything below it is
+a console script or an internal that may move between releases. Full guide: [The
+Public API](../public-api/).
+
+| Function | Returns |
+|---|---|
+| `align_lines(lines, words)` | `AlignResult` — `.matched`, `.unconsumed`, `.missing`, `.invented_words` |
+| `normalize_text(text)` | comparable word tokens |
+| `normalize_words(raw)` | coerce any accepted transcript shape into the word shape (idempotent) |
+| `casting_map(result)` | scripted speaker → the diarized voice ids that rendered them |
+| `check_all_lines_present(result)` | `Check` |
+| `check_no_invented_speech(result)` | `Check` |
+| `check_one_voice_per_line(result)` | `Check` |
+
+`Check` carries `name`, `ok`, `detail`, `traces_to`, and `.as_dict()` for the receipt
+row shape. Types `Word`, `Line`, `MatchedLine` and `AlignResult` are exported too.
 
 ### `dialogue_receipt`
 

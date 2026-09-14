@@ -2,7 +2,7 @@
 title: Graph builders
 description: Build ComfyUI VO-stage graphs as code, with the traps already encoded.
 sidebar:
-  order: 4
+  order: 5
 ---
 
 `fxdub.vo_graphs` builds the ComfyUI graphs for the voice-over stage. Each builder

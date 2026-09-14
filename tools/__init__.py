@@ -20,6 +20,6 @@ spoken", with the video-specific thresholds and checks left behind in
 script or an internal that may move between releases.
 """
 
-__version__ = "1.1.1"
+__version__ = "1.2.0"
 
 __all__ = ["__version__"]
