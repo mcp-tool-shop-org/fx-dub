@@ -104,6 +104,53 @@ graph = vo_graphs.transcribe("<storage-key>.flac", "run/words")
 # -> API-format dict, ready for your own submit path. Nothing is sent from here.
 ```
 
+## The public API — `fxdub.verify`
+
+> **Unreleased.** On `main`, not in `pip install fx-dub` yet — the published 1.1.1
+> has no `verify` module. Install from source to use it today.
+
+The two console scripts verify a *video dub*. The core underneath them — match a
+script against what was actually spoken — is not specific to video, and it is
+exported as a declared, stable surface so other tools can build on it instead of
+importing internals that may move.
+
+```python
+from fxdub import verify
+
+lines = [{"speaker": "narrator", "text": "Chapter two continues the tale."}]
+result = verify.align_lines(lines, words)      # words: the transcript above
+
+result.missing            # scripted lines that were never spoken
+result.invented_words     # rendered tokens no scripted line claimed
+
+verify.check_all_lines_present(result)   # -> Check(name, ok, detail, traces_to)
+verify.check_no_invented_speech(result)
+verify.check_one_voice_per_line(result)
+```
+
+Those three transfer to any pipeline that turns authored text into generated
+speech: **a line the script asked for must be spoken, a line it did not ask for
+must not be, and a character must be rendered by one voice, their own.** They were
+proven against a second codebase before being declared — four content defects
+measured in an EPUB→audiobook renderer (a narrated footnote sentinel, a chapter
+dropped by a partial render and reported as success, three characters collapsed
+into one voice, markup read aloud as prose) are fixtures in
+[`tests/test_verify.py`](tests/test_verify.py), beside a clean control that must
+report nothing.
+
+What is deliberately **not** in the API: transcription (fx-dub consumes word
+timings it is given — that is why it has no dependencies), thresholds (every one
+of them traces to a defect caught by ear in one medium, so they belong to the
+caller that owns the policy), and the medium-specific checks — overlap, mid-line
+straggle, clip fit, ducking depth, caption-vs-cast. A check that cannot
+meaningfully fire in your medium is worse than no check, because it reads as a
+pass.
+
+`fxdub-dialogue` is itself a consumer of this API — it computes its content
+verdicts through `verify` and adds only what makes a receipt a *dub* receipt. That
+is enforced by tests that break `verify` and require the CLI to break with it, so
+the public path cannot quietly become one nobody exercises.
+
 ## Graph builders
 
 `fxdub.vo_graphs` also builds the VO-stage graphs: voice design, same-engine audio
@@ -239,8 +286,11 @@ and closed while the off-frame character speaks.
 
 It scores **19/20** once you pass `--scene`, and the failure is real: the delivered
 run's caption claims two men over a one-man shot. That check is new in this release
-and it caught a defect that had been shipping green. 197 tests, CI green. Full
+and it caught a defect that had been shipping green. 254 tests, CI green. Full
 history in the [CHANGELOG](CHANGELOG.md).
+
+`main` additionally carries the unreleased [`fxdub.verify`](#the-public-api--fxdubverify)
+public API; see the CHANGELOG's Unreleased section.
 
 | Piece | State |
 |---|---|

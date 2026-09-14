@@ -4,6 +4,10 @@
 
 **Written 2026-08-23 at the end of session 5 (supersedes all earlier text).** Read [`AGENTS.md`](AGENTS.md) first — it is the durable operating manual — then this file for live state, then query `kb/fxdub.db`.
 
+> **⭐ AMENDED 2026-09-14 (session 6).** One thing below is now stale and one thing is new.
+> **Stale:** the tables say 197 tests — it is **254**, and `AGENTS.md`'s own snapshot said 158 for two sessions before that. Re-measure, don't quote.
+> **New:** `main` carries an unreleased **`fxdub.verify`** — fx-dub's declared public API — and `dialogue_receipt` is reimplemented on top of it. Details in the CHANGELOG's Unreleased section and in `AGENTS.md`. **pyproject is still 1.1.1; nothing is tagged, released or published.** Cutting 1.2.0 is the Director's call (`SELECT * FROM v_open_actions` names the sequence). Everything else below still holds.
+
 > **Verify from receipts and pulled artifacts, never from reports.** That rule has now caught a refuted agent claim, a silent CFG defect, a clobbered file, a phantom line of dialogue, a hallucinated second man, and — six times — a wrong conclusion of *ours*. **This document is testimony. Re-verify anything load-bearing against live ground truth before acting on it.**
 
 ---

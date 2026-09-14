@@ -2,7 +2,7 @@
 
 You are working on **fx-dub**: video → describe (Florence-2) → rewrite → generated ambience bed (ACE-Step 1.5) + authored dialogue (Chatterbox) → dialogue-anchored mix → stems + manifest → re-muxed `dubbed.mp4`. MIT publishable lane. This file is the ground-running entry for any agent session; it is updated at the end of every working session (that rule is part of the workflow — leave it better than you found it).
 
-**State snapshot: 2026-08-22, session 4 — the DUB IS DELIVERED. v2.8 scores 19/19 with Director-approved voices, and the content verifier that was missing now exists.**
+**State snapshot: 2026-09-14, session 6 — fx-dub now has a DECLARED PUBLIC API.** The content verifier's core is exported as `fxdub.verify` and `dialogue_receipt` is reimplemented on top of it, so the surface third parties build on is the one this repo's own CLI exercises. 254 tests. Version stays 1.1.1 — the 1.2.0 release is Director-gated and nothing is tagged or published. *(Session 4: the dub is delivered — v2.8 scores 19/19 with Director-approved voices.)*
 
 > **Continuing a session?** Read [`HANDOFF.md`](HANDOFF.md) — it carries the live state (what's blocked, what's next, what's approved). This file is the durable manual; that one is the current position.
 
@@ -12,6 +12,18 @@ You are working on **fx-dub**: video → describe (Florence-2) → rewrite → g
 to PyPI via Trusted Publishing (OIDC; workflow `release.yml`, environment
 `release`, no long-lived token anywhere). Two console scripts: `fxdub-receipt`
 (container) and `fxdub-dialogue` (content).
+
+**And one declared import surface: `fxdub.verify`** (new in session 6, unreleased
+on `main`). It is the alignment core — `align_lines` → `AlignResult`, plus the
+three medium-agnostic checks — with every video-specific threshold left behind in
+`dialogue_receipt`. Two rules follow from it and both are enforced by tests:
+
+- **Anything a third party builds on goes in `verify`.** Everything else in
+  `fxdub` is a console script or an internal that may move.
+- **`dialogue_receipt` never re-implements what `verify` does.** It is a consumer,
+  deliberately, so the public path is one this repo dogfoods. `DelegationTests`
+  sabotage `verify` and require the CLI to break with it; a parallel
+  implementation survives them, which is how you will know you built one.
 
 The modules still live in `tools/` — `pyproject.toml` maps that directory onto the
 `fxdub` import name at build time, so `python tools/audition_receipt.py` keeps
@@ -63,7 +75,19 @@ Rows carry `class` **A** (measured on-account: billing feed, API pulls, decoded 
 8. **Verifying a run — BOTH receipts, always.** `tools/audition_receipt.py` checks the *container*; `tools/dialogue_receipt.py` checks what was actually *said*. A take can pass the first and be unusable — that has happened twice. For VO, transcribe with `vo_graphs.transcribe()` then `python tools/dialogue_receipt.py docs/scenes/<scene>.json <words>.json [--only-speaker NAME]`; use `--only-speaker` on any per-character stem, since that is the mode that catches a model inventing the other character's lines. Then, for the assembled run: download the artifacts into one directory and `python tools/audition_receipt.py <run_dir> --scene docs/scenes/<scene>.json --bed-gain-db <the gain the graph applied> --json receipt.json`. **Pass `--scene`** — that enables the caption-vs-cast check, and without it a captioner hallucinating a second person into the shot goes unnoticed, as it did on the delivered run. **Pass the real bed gain** — the default is −9 and the delivered graph used −12, which reports the ducking depth 3 LU low. It measures the FLAC masters (settling the 48 kHz question), parses both LUFS manifests, checks the dialogue-to-bed offset, confirms the dubbed MP4 carries **both** a video and an audio track with frames intact, and exits non-zero on any contract violation. Every check cites the dispatch choice or trap it traces to. **A failing check is a finding — report it; never tune the thresholds to make it green.**
 9. **Tests are a hard gate** (studio feedback memory: tests land in the SAME commit as the code they touch — no "circle back later"). Run `python -m unittest discover -s tests -v` before any push; CI (`.github/workflows/ci.yml`) runs the same on every push touching kb/workflows/tests/assets. The detectors in `tests/graph_lint.py` ARE the executable trap ledger — proven red against the archived known-bad graphs; when a new trap is earned, add its detector + a red-gate fixture in the same commit. When "fx-dub v2.1" is pulled, drop it in `workflows/comfy-cloud/as-built/fx-dub-v2.1.json` — a forward-gate test automatically asserts all detectors stay quiet on it.
 
-## Where things stand (2026-08-22 end of session 4)
+## Where things stand (updated 2026-09-14, end of session 6)
+
+- **THE SURFACE OTHERS BUILD ON IS NOW DECLARED.** `tools/verify.py` →
+  `fxdub.verify`. The trigger was concrete: a dogfood swarm on
+  `mcp-tool-shop-org/audiobooker` proved `align()` catches four of that repo's
+  CRITICAL/HIGH defects that its 1235 passing tests missed — a footnote sentinel
+  narrated aloud, a chapter dropped by `--allow-partial` and reported as
+  `success`, three characters collapsed into one voice, markup read as prose. It
+  was about to depend on `align` and `normalize`, which were module-level
+  functions inside a console script. All four shapes, plus a clean control, are
+  fixtures in `tests/test_verify.py`. **A check proven only against the medium it
+  was written for is not yet evidence that it generalizes** — that is why the
+  foreign defects are in the suite and not just in the commit message.
 
 - **A MODEL'S OUTPUT IS EVIDENCE, NOT A MEASUREMENT.** Session 5 read diarized word timings as a measurement of a clip's *extent* and used it to contradict a byte-level fact, then published the contradiction into the handoff, a relayed brief, a released CHANGELOG and this DB before testing it. The clip truly spanned 2.300-3.715 s; the diarizer ran 0.244 s late at the tail. **Word timings gate CONTENT (order, overlap, gaps) and cannot establish EXTENT** - for extent, decode the file. FLAC carries an md5 of the decoded audio in `STREAMINFO` bytes 18-34: free, exact, no decoder, and strictly better than the duration match that misled us.
 
@@ -76,7 +100,7 @@ Rows carry `class` **A** (measured on-account: billing feed, API pulls, decoded 
 - **Two platform constraints are dead:** `LoadAudio` resolves a cloud storage key its COMBO never lists (proved by an exact round-trip), so **re-mixing is free and deterministic** and **reference audio can reach a clone node**. Voice cloning is confirmed working on cloud.
 - **The VO graphs are now CODE, not transcript blobs.** `tools/vo_graphs.py` builds the VO shapes (voice design, audio reference, clone+TTS, splice, place, place_exact, mix, mix_dialogue_anchored, transcribe) **and the picture stage** (frames, lipsync, mux) and every builder is linted by `graph_lint.API_DETECTORS`, so the shapes that cost real failed jobs cannot be hand-typed back in. v2.3–v2.7 remain unrecoverable — their JSON lived in a session transcript that is gone. **Do not hand-transcribe a replacement and call it as-built.** Session 5 hand-typed every lip-sync graph into a chat window anyway — through an entire paid run — and only noticed on opening the file and finding `place()` and `mix()` already there. **Open this module before you author a graph.**
 - **⚠ `dry_run` is NOT proof.** It validates node existence, link integrity and required-input presence against a bundled catalog. It does **not** validate dotted auto-grow/dynamic-combo slot *names* — two shapes passed `dry_run` and then failed at execution. Only a completed job proves a graph.
-- **Tests:** 158 passing, CI green.
+- **Tests:** **254 passing** (measured 2026-09-14), CI green. *(This line read 158 from session 4 to session 6 — it is a snapshot, so re-measure it rather than quoting it.)*
 - **Not started:** spot-effects timeline, local-lane graphs, npm reservation, prompt-craft `domains/audio`.
 
 ## The lesson session 4 paid for

@@ -29,21 +29,39 @@ detectable from a diarized transcript, which is what this tool checks.
 This tool MEASURES; it does not fix. A failing check is a finding, not a bug in
 the tool: report it, do not tune the thresholds to make it green. Exit 0 when
 every check passes, 1 when any fails — so it can gate a render.
+
+WHAT LIVES HERE vs IN ``fxdub.verify``
+--------------------------------------
+The alignment core is :mod:`fxdub.verify` — the declared public API — and this
+module is one of its consumers. What stays here is everything that makes a
+receipt a *video dub* receipt: the pause and turn-gap budgets (each traces to a
+defect caught by ear on one specific clip, not to a standard), the overlap and
+straggle checks, the clip fit, and the per-line receipt rendering.
+
+**Building a tool on fx-dub? Import** :mod:`fxdub.verify`, not this module.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import os
-import re
 import sys
 
-#: Words are compared with punctuation and case stripped: a TTS engine's comma
-#: placement is not a content defect, and the transcriber's punctuation is its
-#: own guess. Apostrophes are KEPT — "cant" and "can't" are the same word but
-#: dropping the mark makes diffs unreadable in a receipt.
-_PUNCT = re.compile(r"[^a-z0-9']+")
+# The alignment core lives in fxdub.verify — the DECLARED public API. This CLI is
+# a consumer of it like any other, deliberately: a public surface the tool that
+# ships it does not itself use is a second-class path, and it drifts. Everything
+# below this import is what makes this receipt a *video dub* receipt — the
+# budgets, the overlap and straggle checks, the clip fit. The medium-agnostic
+# half is imported, never re-implemented.
+try:  # package import: `fxdub.dialogue_receipt`
+    from . import verify
+except ImportError:  # direct script: `python tools/dialogue_receipt.py`
+    import verify  # type: ignore[no-redef]
+
+#: Re-exported from :mod:`fxdub.verify` — the same objects, not copies, so the
+#: CLI and the public API cannot disagree about what a word is.
+normalize = verify.normalize_text
+normalize_words = verify.normalize_words
 
 #: Default budgets. Overridable per scene AND per line; every one of these traces
 #: to a defect the Director caught by ear, not to a standard.
@@ -58,112 +76,27 @@ DEFAULT_MIN_GAP_BETWEEN_SPEAKERS_S = 0.0
 DEFAULT_CLIP_DURATION_S = 10.062
 
 
-def normalize(text: str) -> list[str]:
-    """Split to comparable word tokens."""
-    return [w for w in _PUNCT.sub(" ", (text or "").lower()).split() if w]
-
-
 def load_words(path: str) -> list[dict]:
-    """Read a diarized word list from disk. See :func:`normalize_words`."""
+    """Read a diarized word list from disk and normalize it.
+
+    The only IO in the content path. :func:`fxdub.verify.normalize_words`
+    documents every transcript shape this accepts.
+    """
     with open(path, "r", encoding="utf-8") as handle:
         return normalize_words(json.load(handle))
-
-
-def normalize_words(raw) -> list[dict]:
-    """Coerce whatever the node emitted into the internal word shape.
-
-    Accepts a bare list, or an object with a ``words`` key. Non-word entries
-    (``type`` of ``spacing``/``audio_event``) are dropped — they carry no text
-    to match and their timings would corrupt the gap measurements. Already-
-    normalized input passes through unchanged, so callers may hand
-    :func:`check_dialogue` raw node JSON without a conversion step.
-    """
-    words = raw if isinstance(raw, list) else raw.get("words", [])
-    out = []
-    for entry in words:
-        if not isinstance(entry, dict):
-            continue
-        if entry.get("type") not in (None, "word"):
-            continue
-        text = normalize(entry.get("text", ""))
-        if not text:
-            continue
-        out.append({
-            "text": text[0] if len(text) == 1 else " ".join(text),
-            "tokens": text,
-            "start": float(entry.get("start", 0.0)),
-            "end": float(entry.get("end", 0.0)),
-            "speaker": entry.get("speaker_id") or entry.get("speaker"),
-        })
-    return out
-
-
-def _flatten(words: list[dict]) -> list[dict]:
-    """One entry per token, so a transcriber that fuses two words still aligns."""
-    flat = []
-    for word in words:
-        tokens = word["tokens"]
-        span = (word["end"] - word["start"]) / max(len(tokens), 1)
-        for i, token in enumerate(tokens):
-            flat.append({
-                "text": token,
-                "start": word["start"] + i * span,
-                "end": word["start"] + (i + 1) * span,
-                "speaker": word["speaker"],
-            })
-    return flat
 
 
 def align(scene_lines: list[dict], words: list[dict]) -> tuple[list[dict], list[dict]]:
     """Match each scripted line to a consecutive run of transcript tokens.
 
-    Returns ``(matched, unconsumed)``. A line that cannot be found anywhere at or
-    after the cursor is returned with ``found=False`` rather than raising — a
-    missing line is a finding, and the receipt should report the others too.
-
-    ``unconsumed`` is every token no scripted line claimed. That list is the
-    detector for content the model invented: it is how the phantom fourth line
-    would have been caught before the mix.
+    A thin adapter over :func:`fxdub.verify.align_lines`, kept because it
+    predates the public API and callers exist. It returns the older
+    ``(matched, unconsumed)`` tuple; new code should call ``align_lines`` and use
+    the :class:`~fxdub.verify.AlignResult` it returns, which names ``missing``
+    and ``invented_words`` directly.
     """
-    flat = _flatten(words)
-    cursor = 0
-    matched: list[dict] = []
-    claimed: set[int] = set()
-
-    for line in scene_lines:
-        want = normalize(line.get("text", ""))
-        hit = None
-        if want:
-            for start in range(cursor, len(flat) - len(want) + 1):
-                if all(flat[start + i]["text"] == want[i] for i in range(len(want))):
-                    hit = start
-                    break
-        if hit is None:
-            matched.append({
-                "speaker": line.get("speaker"),
-                "text": line.get("text"),
-                "found": False,
-            })
-            continue
-        run = flat[hit:hit + len(want)]
-        claimed.update(range(hit, hit + len(want)))
-        speakers = [w["speaker"] for w in run if w["speaker"] is not None]
-        # widest gap between consecutive tokens inside the line -- the pause check
-        gaps = [run[i + 1]["start"] - run[i]["end"] for i in range(len(run) - 1)]
-        matched.append({
-            "speaker": line.get("speaker"),
-            "text": line.get("text"),
-            "max_gap_s": line.get("max_gap_s"),
-            "found": True,
-            "start": round(run[0]["start"], 3),
-            "end": round(run[-1]["end"], 3),
-            "diarized_speaker": max(set(speakers), key=speakers.count) if speakers else None,
-            "max_internal_gap_s": round(max(gaps), 3) if gaps else 0.0,
-        })
-        cursor = hit + len(want)
-
-    unconsumed = [w for i, w in enumerate(flat) if i not in claimed]
-    return matched, unconsumed
+    result = verify.align_lines(scene_lines, words)
+    return result.matched, result.unconsumed
 
 
 def check_dialogue(scene: dict, words: list[dict], only_speaker: str | None = None) -> dict:
@@ -182,7 +115,10 @@ def check_dialogue(scene: dict, words: list[dict], only_speaker: str | None = No
     def record(name, ok, detail, traces_to):
         checks.append({"check": name, "ok": bool(ok), "detail": detail, "traces_to": traces_to})
 
-    words = normalize_words(words)
+    def record_check(check):
+        """Append a verdict the public API computed, in this receipt's row shape."""
+        checks.append(check.as_dict())
+
     lines = scene.get("lines", []) or []
     if only_speaker is not None:
         lines = [ln for ln in lines if ln.get("speaker") == only_speaker]
@@ -191,11 +127,18 @@ def check_dialogue(scene: dict, words: list[dict], only_speaker: str | None = No
     min_turn_gap = float(scene.get("min_gap_between_speakers_s", DEFAULT_MIN_GAP_BETWEEN_SPEAKERS_S))
     clip_s = float(scene.get("clip_duration_s", DEFAULT_CLIP_DURATION_S))
 
-    matched, unconsumed = align(lines, words)
+    result = verify.align_lines(lines, words)
+    matched, unconsumed = result.matched, result.unconsumed
     measured["lines"] = matched
     measured["unconsumed_words"] = [w["text"] for w in unconsumed]
 
     # --- every scripted line is present, in order ----------------------------
+    #: The public API answers this as one aggregate verdict
+    #: (``verify.check_all_lines_present``). The receipt emits a row PER LINE
+    #: instead, off the same ``found`` flags, because a dub receipt is read by
+    #: someone deciding which line to re-render — "1 of 4 missing" does not tell
+    #: them which. Same measurement, two renderings; the test suite asserts the
+    #: two cannot disagree.
     for i, line in enumerate(matched):
         record(
             "line_present:{0}:{1}".format(i, line.get("speaker")),
@@ -207,16 +150,11 @@ def check_dialogue(scene: dict, words: list[dict], only_speaker: str | None = No
     found = [m for m in matched if m.get("found")]
 
     # --- nothing the script did not ask for ----------------------------------
-    #: The ByteDance reference-bleed trap. An audio reference carrying dialogue
-    #: makes the model re-speak lines the prompt omitted; mixed against the real
-    #: take it reads as overlapping voices.
-    record(
-        "no_invented_speech",
-        not unconsumed,
-        "clean" if not unconsumed else
-        "{0} unscripted word(s): {1}".format(len(unconsumed), " ".join(w["text"] for w in unconsumed[:12])),
-        "trap: ByteDance audio-reference reproduces the reference's dialogue content",
-    )
+    #: Delegated verbatim to the public API. The ByteDance reference-bleed trap
+    #: this traces to is not a video defect — an audio reference carrying
+    #: dialogue makes the model re-speak lines the prompt omitted, whatever the
+    #: prompt was for — so the check belongs to every consumer, not to this CLI.
+    record_check(verify.check_no_invented_speech(result))
 
     # --- lines do not overlap each other -------------------------------------
     overlaps = []
@@ -265,11 +203,15 @@ def check_dialogue(scene: dict, words: list[dict], only_speaker: str | None = No
     # --- casting: one voice per character, consistently ----------------------
     #: The defect that started session 4: the deep voice spoke BOTH characters'
     #: lines. Diarization sees one speaker where the script names two.
-    cast: dict = {}
-    for line in found:
-        if line.get("diarized_speaker") is not None:
-            cast.setdefault(line["speaker"], set()).add(line["diarized_speaker"])
-    measured["casting"] = {k: sorted(v) for k, v in cast.items()}
+    #:
+    #: The mapping comes from ``verify.casting_map`` — one computation, which the
+    #: public API's ``check_one_voice_per_line`` also reads. The receipt splits
+    #: the verdict into the two rows below because they fail in opposite
+    #: directions and are fixed differently: a re-cast character needs the
+    #: approved take referenced again, two characters on one voice need a second
+    #: node.
+    cast = verify.casting_map(result)
+    measured["casting"] = cast
     split = [k for k, v in cast.items() if len(v) > 1]
     record(
         "one_voice_per_character",
@@ -278,7 +220,7 @@ def check_dialogue(scene: dict, words: list[dict], only_speaker: str | None = No
         "trap: a character re-cast between renders is not a character",
     )
 
-    all_ids = [next(iter(v)) for v in cast.values() if len(v) == 1]
+    all_ids = [v[0] for v in cast.values() if len(v) == 1]
     record(
         "characters_are_distinct",
         len(set(all_ids)) == len(all_ids),
