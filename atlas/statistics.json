@@ -120,12 +120,12 @@
     },
     {
       "breakage": {
-        "coChangesOnly": [
-          "tests"
-        ],
+        "coChangesOnly": [],
         "collapsed": false,
         "confidence": "low",
-        "importsAndCoChanges": [],
+        "importsAndCoChanges": [
+          "tests"
+        ],
         "importsOnly": []
       },
       "cohesion": 0,
@@ -157,8 +157,8 @@
     "definition": "commits is how many commits in the window touch the file, including merges and commits dropped from coupling. lines is added plus deleted in those commits.",
     "files": [
       {
-        "commits": 6,
-        "lines": 155,
+        "commits": 7,
+        "lines": 170,
         "path": ".github/workflows/ci.yml"
       },
       {
@@ -250,6 +250,31 @@
         "commits": 2,
         "lines": 99,
         "path": "SHIP_GATE.md"
+      },
+      {
+        "commits": 1,
+        "lines": 78,
+        "path": "atlas/README.md"
+      },
+      {
+        "commits": 1,
+        "lines": 38,
+        "path": "atlas/boundaries.yaml"
+      },
+      {
+        "commits": 1,
+        "lines": 186,
+        "path": "atlas/page.json"
+      },
+      {
+        "commits": 1,
+        "lines": 1206,
+        "path": "atlas/statistics.json"
+      },
+      {
+        "commits": 1,
+        "lines": 1837,
+        "path": "atlas/structure.json"
       },
       {
         "commits": 3,
@@ -1050,11 +1075,11 @@
   },
   "confidence": {
     "level": "low",
-    "reason": "fewer than 20 source files reach 10 revisions in the window"
+    "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-09-25T09:37:31.024Z",
+  "generatedAt": "2026-09-30T20:09:45.081Z",
   "generatedFrom": {
-    "commit": "ebdab0612a97aa09f05d77588564dcd60b0dbb2d"
+    "commit": "8bb7ee7a8362d980f7286d7cdfe0d859be859a97"
   },
   "pairs": [
     {
@@ -1164,7 +1189,7 @@
     }
   ],
   "parameters": {
-    "appliedChangesetLimit": 44.5,
+    "appliedChangesetLimit": 45.75,
     "changeset": 50,
     "changesetFraction": 0.25,
     "cohesionDrop": 0.2,
@@ -1173,16 +1198,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-09-17T18:54:25-07:00",
-    "inScopeFiles": 178,
+    "headDate": "2026-09-25T03:01:41-07:00",
+    "inScopeFiles": 183,
     "pinnedStart": null,
-    "priorFloor": null,
-    "qualifyingCommits": 42,
+    "priorFloor": "fallen",
+    "qualifyingCommits": 43,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-03-22T01:54:25.000Z",
+    "since": "2026-03-29T10:01:41.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",

@@ -9,7 +9,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "fc490685b79d1b13e79e0ea9ea1fc2c45c26711b113c631fdfde14426ee6102a",
+          "hash": "041b9dee91e17b422b57dd4b23f098b8e6a19ce879ab520252b73dbb7aa475bc",
           "path": ".github/workflows/ci.yml"
         },
         {
@@ -685,6 +685,14 @@
         },
         {
           "hash": "391533713539035d3c92282579d43de0f137067867fdb502d7eaea3c74601d2a",
+          "importOrder": [
+            "site/src/styles/global.css",
+            "site/src/site-config.ts"
+          ],
+          "importsFiles": [
+            "site/src/site-config.ts",
+            "site/src/styles/global.css"
+          ],
           "path": "site/src/pages/index.astro"
         },
         {
@@ -783,11 +791,16 @@
         },
         {
           "hash": "ef9ab8c95db3ff7abe7f9071ee1ce41e093653ccbfa85d6b43e6536605e7bc46",
-          "path": "tests/test_api_detectors.py"
+          "importsFiles": [
+            "tests/graph_lint.py"
+          ],
+          "path": "tests/test_api_detectors.py",
+          "testFramework": "unittest"
         },
         {
           "hash": "806e0683f76dd1301c43f94054efd0177240a770e551e89d41eb245b2bc12a16",
-          "path": "tests/test_assets.py"
+          "path": "tests/test_assets.py",
+          "testFramework": "unittest"
         },
         {
           "exports": [
@@ -797,7 +810,18 @@
             "write_run"
           ],
           "hash": "0f7e35782e14477d6c415b095c120a98042a5477f07031816909d33cbb033a6e",
-          "path": "tests/test_audition_receipt.py"
+          "importOrder": [
+            "tools/audition_receipt.py",
+            "tests/flac_info.py",
+            "tools/media_probe.py"
+          ],
+          "importsFiles": [
+            "tests/flac_info.py",
+            "tools/audition_receipt.py",
+            "tools/media_probe.py"
+          ],
+          "path": "tests/test_audition_receipt.py",
+          "testFramework": "unittest"
         },
         {
           "exports": [
@@ -806,19 +830,32 @@
             "words"
           ],
           "hash": "3f042b8210abaae28f00cd32ca3d944bc8c214616540f9c7113b6fd90ab9bbcb",
-          "path": "tests/test_dialogue_receipt.py"
+          "importsFiles": [
+            "tools/dialogue_receipt.py"
+          ],
+          "path": "tests/test_dialogue_receipt.py",
+          "testFramework": "unittest"
         },
         {
           "hash": "3ba5b3540d5afaedcdfe48dbd122226ac21aad83e619f2d60b3c3e4cf1fde6cd",
-          "path": "tests/test_docs.py"
+          "path": "tests/test_docs.py",
+          "testFramework": "unittest"
         },
         {
           "hash": "b838f286c0118dfed0fd3df5d0c770df17db0d587875e3a5a87d6f7fb7d05266",
-          "path": "tests/test_flac_info.py"
+          "importsFiles": [
+            "tests/flac_info.py"
+          ],
+          "path": "tests/test_flac_info.py",
+          "testFramework": "unittest"
         },
         {
           "hash": "2736f284b9a5a58219691c65b185ae3d4d5f3b0fc876697691c015b57792c56e",
-          "path": "tests/test_graphs.py"
+          "importsFiles": [
+            "tests/graph_lint.py"
+          ],
+          "path": "tests/test_graphs.py",
+          "testFramework": "unittest"
         },
         {
           "exports": [
@@ -826,7 +863,11 @@
             "tearDownModule"
           ],
           "hash": "72ba27b88ffff29f495ce39e5aa7aaa921c1a6f6cf10f5be680b7c2b0f7275bd",
-          "path": "tests/test_kb.py"
+          "names": [
+            "kb/build_db.py"
+          ],
+          "path": "tests/test_kb.py",
+          "testFramework": "unittest"
         },
         {
           "exports": [
@@ -834,7 +875,14 @@
             "tracked_text_files"
           ],
           "hash": "1708c2abc94cdde6f381906190783bad58d8cafa998d809722178d5eebc135a6",
-          "path": "tests/test_no_local_paths.py"
+          "importsFiles": [
+            "tools/audition_receipt.py"
+          ],
+          "names": [
+            "tools/verify.py"
+          ],
+          "path": "tests/test_no_local_paths.py",
+          "testFramework": "unittest"
         },
         {
           "exports": [
@@ -842,14 +890,27 @@
             "words"
           ],
           "hash": "c03fdcd7f1847955f535bb95e37b08fa9bed1a0ead283e12c96d0ccc9df3f4ca",
-          "path": "tests/test_verify.py"
+          "importsFiles": [
+            "tools/dialogue_receipt.py",
+            "tools/verify.py"
+          ],
+          "path": "tests/test_verify.py",
+          "testFramework": "unittest"
         },
         {
           "exports": [
             "build_one_of_each"
           ],
           "hash": "61987569ca06c5645e1a47f2326beb34dd23384396327d0113eaecf18ac5610a",
-          "path": "tests/test_vo_graphs.py"
+          "importsFiles": [
+            "tests/graph_lint.py",
+            "tools/vo_graphs.py"
+          ],
+          "names": [
+            "tools/__init__.py"
+          ],
+          "path": "tests/test_vo_graphs.py",
+          "testFramework": "unittest"
         },
         {
           "exports": [
@@ -857,7 +918,8 @@
             "parse_triggers"
           ],
           "hash": "c91bdb4afbdb2db6031f25e8ac29cdf1e121677973a71c843c630df14e7412a5",
-          "path": "tests/test_workflows.py"
+          "path": "tests/test_workflows.py",
+          "testFramework": "unittest"
         }
       ],
       "globs": [
@@ -867,39 +929,31 @@
       "name": "tests",
       "origin": "authored",
       "role": "test",
-      "testedBy": 0,
-      "unresolvedNamed": [
-        {
-          "path": "tests/test_api_detectors.py",
-          "specifier": "graph_lint",
-          "why": "unplaced"
-        },
-        {
-          "path": "tests/test_audition_receipt.py",
-          "specifier": "audition_receipt",
-          "why": "unplaced"
-        },
-        {
-          "path": "tests/test_audition_receipt.py",
-          "specifier": "flac_info",
-          "why": "unplaced"
-        }
+      "testRunners": [
+        "unittest"
       ],
-      "unresolvedSites": 15
+      "testedBy": 0,
+      "unresolvedSites": 0
     },
     {
-      "dynamicReads": 4,
+      "dynamicReads": 0,
       "dynamicSpawns": 0,
       "dynamicSpawnsInTests": 0,
       "dynamicWrites": 0,
-      "entryPoints": [],
+      "entryPoints": [
+        "tools/audition_receipt.py",
+        "tools/dialogue_receipt.py"
+      ],
       "externals": 0,
       "files": [
         {
+          "constantOnly": true,
           "hash": "ac52d215db8634e911eba590bf92d930ac014c530327ea148082bea1e46e4bf0",
           "path": "tools/__init__.py"
         },
         {
+          "entry": "main",
+          "entryRule": 0,
           "exports": [
             "caption_person_count",
             "check_run",
@@ -907,10 +961,124 @@
             "render",
             "scene_on_frame_count"
           ],
+          "failurePaths": [
+            {
+              "in": "_run_label",
+              "kind": "except",
+              "line": 100
+            },
+            {
+              "in": "check_run",
+              "kind": "except",
+              "line": 245
+            },
+            {
+              "in": "check_run",
+              "kind": "except",
+              "line": 293
+            },
+            {
+              "in": "check_run",
+              "kind": "except",
+              "line": 335
+            },
+            {
+              "in": "main",
+              "kind": "except",
+              "line": 435
+            },
+            {
+              "in": "main",
+              "kind": "raise",
+              "line": 437
+            },
+            {
+              "in": "main",
+              "kind": "except",
+              "line": 452
+            },
+            {
+              "in": "main",
+              "kind": "raise",
+              "line": 454
+            },
+            {
+              "kind": "raise",
+              "line": 465
+            }
+          ],
           "hash": "2ff09727a822cd1249c7b3ff9ca9800553551cd7b7b5bfac95051a539792ca34",
-          "path": "tools/audition_receipt.py"
+          "importsFiles": [
+            "tools/media_probe.py"
+          ],
+          "path": "tools/audition_receipt.py",
+          "sequences": [
+            {
+              "calls": [
+                {
+                  "line": 244,
+                  "name": "parse_streaminfo",
+                  "target": {
+                    "file": "tools/media_probe.py"
+                  }
+                },
+                {
+                  "line": 292,
+                  "name": "parse_lufs",
+                  "target": {
+                    "file": "tools/media_probe.py"
+                  }
+                },
+                {
+                  "line": 334,
+                  "name": "probe_mp4",
+                  "target": {
+                    "file": "tools/media_probe.py"
+                  }
+                }
+              ],
+              "exported": true,
+              "invokedAtTopLevel": false,
+              "isDefaultExport": false,
+              "name": "check_run"
+            },
+            {
+              "calls": [
+                {
+                  "line": 244,
+                  "name": "parse_streaminfo",
+                  "target": {
+                    "file": "tools/media_probe.py"
+                  },
+                  "via": "check_run"
+                },
+                {
+                  "line": 292,
+                  "name": "parse_lufs",
+                  "target": {
+                    "file": "tools/media_probe.py"
+                  },
+                  "via": "check_run"
+                },
+                {
+                  "line": 334,
+                  "name": "probe_mp4",
+                  "target": {
+                    "file": "tools/media_probe.py"
+                  },
+                  "via": "check_run"
+                }
+              ],
+              "exported": true,
+              "invokedAtTopLevel": true,
+              "isDefaultExport": false,
+              "name": "main"
+            }
+          ]
         },
         {
+          "entry": "main",
+          "entryRule": 0,
           "exports": [
             "align",
             "check_dialogue",
@@ -918,17 +1086,211 @@
             "main",
             "render"
           ],
+          "failurePaths": [
+            {
+              "kind": "except",
+              "line": 58
+            },
+            {
+              "in": "main",
+              "kind": "except",
+              "line": 288
+            },
+            {
+              "in": "main",
+              "kind": "raise",
+              "line": 290
+            },
+            {
+              "in": "main",
+              "kind": "except",
+              "line": 293
+            },
+            {
+              "in": "main",
+              "kind": "raise",
+              "line": 295
+            },
+            {
+              "in": "main",
+              "kind": "except",
+              "line": 301
+            },
+            {
+              "in": "main",
+              "kind": "raise",
+              "line": 303
+            },
+            {
+              "in": "main",
+              "kind": "except",
+              "line": 307
+            },
+            {
+              "in": "main",
+              "kind": "raise",
+              "line": 309
+            },
+            {
+              "in": "main",
+              "kind": "except",
+              "line": 335
+            },
+            {
+              "in": "main",
+              "kind": "raise",
+              "line": 337
+            }
+          ],
           "hash": "919e4b9223bc0d304b6673622e9bdaffcabfd5f4c6612fd8c002fb5f6faefffe",
           "importsFiles": [
-            "tools/__init__.py"
+            "tools/__init__.py",
+            "tools/verify.py"
           ],
-          "path": "tools/dialogue_receipt.py"
+          "path": "tools/dialogue_receipt.py",
+          "sequences": [
+            {
+              "calls": [
+                {
+                  "line": 98,
+                  "name": "align_lines",
+                  "target": {
+                    "file": "tools/__init__.py"
+                  }
+                }
+              ],
+              "exported": true,
+              "invokedAtTopLevel": false,
+              "isDefaultExport": false,
+              "name": "align"
+            },
+            {
+              "calls": [
+                {
+                  "line": 130,
+                  "name": "align_lines",
+                  "target": {
+                    "file": "tools/__init__.py"
+                  }
+                },
+                {
+                  "line": 157,
+                  "name": "check_no_invented_speech",
+                  "target": {
+                    "file": "tools/__init__.py"
+                  }
+                },
+                {
+                  "line": 120,
+                  "name": "as_dict",
+                  "target": null,
+                  "via": "record_check"
+                },
+                {
+                  "line": 213,
+                  "name": "casting_map",
+                  "target": {
+                    "file": "tools/__init__.py"
+                  }
+                }
+              ],
+              "exported": true,
+              "invokedAtTopLevel": false,
+              "isDefaultExport": false,
+              "name": "check_dialogue"
+            },
+            {
+              "calls": [
+                {
+                  "line": 130,
+                  "name": "align_lines",
+                  "target": {
+                    "file": "tools/__init__.py"
+                  },
+                  "via": "check_dialogue"
+                },
+                {
+                  "line": 157,
+                  "name": "check_no_invented_speech",
+                  "target": {
+                    "file": "tools/__init__.py"
+                  },
+                  "via": "check_dialogue"
+                },
+                {
+                  "line": 120,
+                  "name": "as_dict",
+                  "target": null,
+                  "via": "record_check"
+                },
+                {
+                  "line": 213,
+                  "name": "casting_map",
+                  "target": {
+                    "file": "tools/__init__.py"
+                  },
+                  "via": "check_dialogue"
+                }
+              ],
+              "exported": true,
+              "invokedAtTopLevel": true,
+              "isDefaultExport": false,
+              "name": "main"
+            }
+          ]
         },
         {
           "exports": [
             "parse_lufs",
             "parse_streaminfo",
             "probe_mp4"
+          ],
+          "failurePaths": [
+            {
+              "in": "parse_streaminfo",
+              "kind": "raise",
+              "line": 24
+            },
+            {
+              "in": "parse_streaminfo",
+              "kind": "raise",
+              "line": 26
+            },
+            {
+              "in": "parse_streaminfo",
+              "kind": "raise",
+              "line": 28
+            },
+            {
+              "in": "parse_streaminfo",
+              "kind": "raise",
+              "line": 32
+            },
+            {
+              "in": "parse_streaminfo",
+              "kind": "raise",
+              "line": 42
+            },
+            {
+              "in": "probe_mp4",
+              "kind": "raise",
+              "line": 60
+            },
+            {
+              "in": "probe_mp4",
+              "kind": "raise",
+              "line": 62
+            },
+            {
+              "in": "probe_mp4",
+              "kind": "raise",
+              "line": 74
+            },
+            {
+              "in": "parse_lufs",
+              "kind": "raise",
+              "line": 132
+            }
           ],
           "hash": "b22f62ea0ef3ba2ae1aba5454aa59363e0446f5407f8e6c6bc1c3d042e449751",
           "path": "tools/media_probe.py"
@@ -946,6 +1308,13 @@
             "check_one_voice_per_line",
             "normalize_text",
             "normalize_words"
+          ],
+          "failurePaths": [
+            {
+              "in": "normalize_words",
+              "kind": "raise",
+              "line": 275
+            }
           ],
           "hash": "778af721c7b170cbcc755626a8b13b7d6ba7c7507d5eb51d89b486e49fbebb26",
           "path": "tools/verify.py"
@@ -968,6 +1337,28 @@
             "splice",
             "transcribe"
           ],
+          "failurePaths": [
+            {
+              "in": "splice",
+              "kind": "raise",
+              "line": 140
+            },
+            {
+              "in": "gap_closing_spans",
+              "kind": "raise",
+              "line": 221
+            },
+            {
+              "in": "place_exact",
+              "kind": "raise",
+              "line": 279
+            },
+            {
+              "in": "mix_dialogue_anchored",
+              "kind": "raise",
+              "line": 403
+            }
+          ],
           "hash": "9d4d9f5396e25740c8cc5b93eea69e7ad7c5dd9b419a46e14e1d45b822fff993",
           "path": "tools/vo_graphs.py"
         }
@@ -980,30 +1371,28 @@
       "origin": "authored",
       "outsidePlaces": [
         {
-          "reads": 2,
+          "reads": 6,
           "where": [
             "caller"
           ],
           "writes": 2
         }
       ],
-      "outsideReads": 2,
+      "outsideReads": 6,
       "outsideWrites": 2,
       "role": "code",
-      "testedBy": 4,
+      "testRunners": [
+        "unittest"
+      ],
+      "testedBy": 5,
       "unresolvedNamed": [
-        {
-          "path": "tools/audition_receipt.py",
-          "specifier": "media_probe",
-          "why": "unplaced"
-        },
         {
           "path": "tools/dialogue_receipt.py",
           "specifier": "verify",
           "why": "unplaced"
         }
       ],
-      "unresolvedSites": 2
+      "unresolvedSites": 1
     },
     {
       "dynamicReads": 0,
@@ -1058,39 +1447,135 @@
       "checksCount": 0,
       "commands": [
         {
+          "dir": "",
           "job": "verify",
-          "step": "Atlas check",
-          "text": "npx --yes @dogfood-lab/atlas@1.21.0 check"
+          "programs": [
+            "npx"
+          ],
+          "step": "Atlas check"
         },
         {
+          "dir": "",
           "job": "verify",
-          "step": "Install tooling",
-          "text": "python -m pip install --upgrade build pillow"
+          "programs": [
+            "python"
+          ],
+          "step": "Install tooling"
         },
         {
+          "dir": "",
           "job": "verify",
-          "step": "Verify",
-          "text": "chmod +x verify.sh\n./verify.sh\n"
+          "programs": [
+            "./verify.sh",
+            "chmod"
+          ],
+          "step": "Verify"
         },
         {
+          "dir": "",
           "job": "audit",
-          "step": "Install pip-audit",
-          "text": "python -m pip install --upgrade pip-audit build"
+          "programs": [
+            "python"
+          ],
+          "step": "Install pip-audit"
         },
         {
+          "dir": "",
           "job": "audit",
-          "step": "Audit the build + test toolchain",
-          "text": "pip-audit --strict --progress-spinner=off"
+          "programs": [
+            "pip-audit"
+          ],
+          "step": "Audit the build + test toolchain"
         },
         {
+          "dir": "",
           "job": "audit",
-          "step": "Runtime dependency list must stay empty",
-          "text": "python - <<'PY'\nimport tomllib, sys\ndeps = tomllib.load(open('pyproject.toml','rb'))['project'].get('dependencies', [])\nif deps:\n    print(f\"::error::fx-dub declares runtime dependencies: {deps}. \"\n          \"SECURITY.md promises none. Update both, deliberately, or drop the dep.\")\n    sys.exit(1)\nprint(\"runtime dependencies: none, as documented\")\nPY\n"
+          "programs": [
+            "python"
+          ],
+          "step": "Runtime dependency list must stay empty"
         }
       ],
       "elsewhere": [],
       "file": ".github/workflows/ci.yml",
-      "landings": [],
+      "jobs": [
+        {
+          "basis": "declared",
+          "name": "verify",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ],
+          "setup": [
+            {
+              "ranges": [
+                {
+                  "from": "3.10",
+                  "range": ">=3.10.0 <3.11.0-0"
+                },
+                {
+                  "from": "3.12",
+                  "range": ">=3.12.0 <3.13.0-0"
+                }
+              ],
+              "step": "1",
+              "uses": "actions/setup-python",
+              "version": "${{ matrix.python-version }}"
+            },
+            {
+              "ranges": [
+                {
+                  "from": "22",
+                  "range": ">=22.0.0 <23.0.0-0"
+                }
+              ],
+              "step": "Set up Node for Atlas",
+              "uses": "actions/setup-node",
+              "version": "22"
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "audit",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ],
+          "setup": [
+            {
+              "ranges": [
+                {
+                  "from": "3.12",
+                  "range": ">=3.12.0 <3.13.0-0"
+                }
+              ],
+              "step": "1",
+              "uses": "actions/setup-python",
+              "version": "3.12"
+            }
+          ]
+        }
+      ],
+      "landings": [
+        "kb/fxdub.db"
+      ],
       "mentions": [
         {
           "job": "audit",
@@ -1111,17 +1596,54 @@
           "boundary": "root",
           "depth": 0,
           "files": 1
+        },
+        {
+          "boundary": "tests",
+          "depth": 0,
+          "files": 15
+        },
+        {
+          "boundary": "tools",
+          "depth": 1,
+          "enters": {
+            "file": "tools/audition_receipt.py",
+            "from": "tests/test_audition_receipt.py"
+          },
+          "files": 6
         }
       ],
-      "readers": [],
+      "readers": [
+        {
+          "by": "tests/test_docs.py",
+          "call": "literal",
+          "confidence": "ast",
+          "fromTests": true,
+          "target": "kb/fxdub.db"
+        },
+        {
+          "by": "tests/test_kb.py",
+          "call": "open",
+          "confidence": "ast",
+          "fromTests": true,
+          "target": "kb/fxdub.db"
+        }
+      ],
       "runs": [
+        {
+          "directory": true,
+          "job": "verify",
+          "matched": true,
+          "path": "tests/",
+          "runKind": "executes",
+          "via": "verify.sh → unittest"
+        },
         {
           "job": "verify",
           "path": "verify.sh",
           "runKind": "executes"
         }
       ],
-      "runsCount": 1,
+      "runsCount": 2,
       "secrets": [],
       "sends": {
         "deploysPages": false,
@@ -1134,6 +1656,17 @@
         "releases": false
       },
       "stages": [],
+      "tests": [
+        {
+          "files": 15,
+          "job": "verify",
+          "runner": "unittest",
+          "step": "Verify",
+          "through": [
+            "verify.sh"
+          ]
+        }
+      ],
       "triggers": [
         {
           "event": "pull_request",
@@ -1189,18 +1722,74 @@
       "checksCount": 0,
       "commands": [
         {
+          "dir": "site",
           "job": "build",
-          "step": "Install site dependencies",
-          "text": "npm ci"
+          "programs": [
+            "npm"
+          ],
+          "step": "Install site dependencies"
         },
         {
+          "dir": "site",
           "job": "build",
-          "step": "Build site",
-          "text": "npm run build"
+          "programs": [
+            "npm"
+          ],
+          "step": "Build site"
         }
       ],
       "elsewhere": [],
       "file": ".github/workflows/pages.yml",
+      "jobs": [
+        {
+          "basis": "declared",
+          "name": "build",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ],
+          "setup": [
+            {
+              "ranges": [
+                {
+                  "from": "22",
+                  "range": ">=22.0.0 <23.0.0-0"
+                }
+              ],
+              "step": "1",
+              "uses": "actions/setup-node",
+              "version": "22"
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "environment": {
+            "name": "github-pages"
+          },
+          "name": "deploy",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        }
+      ],
       "landings": [],
       "mentions": [],
       "name": "Deploy site to GitHub Pages",
@@ -1214,7 +1803,7 @@
         {
           "boundary": "site",
           "depth": 0,
-          "files": 3
+          "files": 5
         }
       ],
       "readers": [],
@@ -1275,29 +1864,47 @@
       "checksCount": 0,
       "commands": [
         {
+          "dir": "",
           "job": "build",
-          "step": "Install build tooling",
-          "text": "python -m pip install --upgrade build twine"
+          "programs": [
+            "python"
+          ],
+          "step": "Install build tooling"
         },
         {
+          "dir": "",
           "job": "build",
-          "step": "Verify before building",
-          "text": "chmod +x verify.sh\n./verify.sh\n"
+          "programs": [
+            "./verify.sh",
+            "chmod"
+          ],
+          "step": "Verify before building"
         },
         {
+          "dir": "",
           "job": "build",
-          "step": "Check distribution metadata",
-          "text": "python -m twine check dist/*"
+          "programs": [
+            "python"
+          ],
+          "step": "Check distribution metadata"
         },
         {
+          "dir": "",
           "job": "build",
-          "step": "Version matches tag",
-          "text": "TAG=\"${GITHUB_REF_NAME#v}\"\nVER=$(python -c \"import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])\")\necho \"tag=$TAG manifest=$VER\"\ntest \"$TAG\" = \"$VER\" || { echo \"::error::tag $TAG != pyproject version $VER\"; exit 1; }\n"
+          "programs": [
+            "echo",
+            "python",
+            "test"
+          ],
+          "step": "Version matches tag"
         },
         {
+          "dir": "",
           "job": "publish",
-          "step": "Attach artifacts to the GitHub Release",
-          "text": "gh release upload \"${GITHUB_REF_NAME}\" dist/* --repo \"${GITHUB_REPOSITORY}\" --clobber"
+          "programs": [
+            "gh"
+          ],
+          "step": "Attach artifacts to the GitHub Release"
         }
       ],
       "elsewhere": [],
@@ -1319,7 +1926,59 @@
           }
         }
       ],
-      "landings": [],
+      "jobs": [
+        {
+          "basis": "declared",
+          "name": "build",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ],
+          "setup": [
+            {
+              "ranges": [
+                {
+                  "from": "3.12",
+                  "range": ">=3.12.0 <3.13.0-0"
+                }
+              ],
+              "step": "1",
+              "uses": "actions/setup-python",
+              "version": "3.12"
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "environment": {
+            "name": "release"
+          },
+          "name": "publish",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        }
+      ],
+      "landings": [
+        "kb/fxdub.db"
+      ],
       "mentions": [
         {
           "job": "build",
@@ -1338,17 +1997,54 @@
           "boundary": "root",
           "depth": 0,
           "files": 1
+        },
+        {
+          "boundary": "tests",
+          "depth": 0,
+          "files": 15
+        },
+        {
+          "boundary": "tools",
+          "depth": 1,
+          "enters": {
+            "file": "tools/audition_receipt.py",
+            "from": "tests/test_audition_receipt.py"
+          },
+          "files": 6
         }
       ],
-      "readers": [],
+      "readers": [
+        {
+          "by": "tests/test_docs.py",
+          "call": "literal",
+          "confidence": "ast",
+          "fromTests": true,
+          "target": "kb/fxdub.db"
+        },
+        {
+          "by": "tests/test_kb.py",
+          "call": "open",
+          "confidence": "ast",
+          "fromTests": true,
+          "target": "kb/fxdub.db"
+        }
+      ],
       "runs": [
+        {
+          "directory": true,
+          "job": "build",
+          "matched": true,
+          "path": "tests/",
+          "runKind": "executes",
+          "via": "verify.sh → unittest"
+        },
         {
           "job": "build",
           "path": "verify.sh",
           "runKind": "executes"
         }
       ],
-      "runsCount": 1,
+      "runsCount": 2,
       "secrets": [],
       "sends": {
         "deploysPages": false,
@@ -1363,6 +2059,17 @@
         "releases": false
       },
       "stages": [],
+      "tests": [
+        {
+          "files": 15,
+          "job": "build",
+          "runner": "unittest",
+          "step": "Verify before building",
+          "through": [
+            "verify.sh"
+          ]
+        }
+      ],
       "triggers": [
         {
           "event": "release",
@@ -1382,11 +2089,103 @@
         "pypa/gh-action-pypi-publish"
       ],
       "usesWorkflowToken": true
+    },
+    {
+      "checksCount": 0,
+      "commands": [],
+      "elsewhere": [],
+      "file": "pyproject.toml",
+      "kind": "command",
+      "landings": [],
+      "mentions": [],
+      "name": "fxdub-dialogue",
+      "permissions": [],
+      "pushes": false,
+      "reach": [
+        {
+          "boundary": "tools",
+          "depth": 0,
+          "files": 3
+        }
+      ],
+      "readers": [],
+      "runs": [
+        {
+          "path": "tools/dialogue_receipt.py",
+          "runKind": "executes"
+        }
+      ],
+      "runsCount": 1,
+      "secrets": [],
+      "sends": {
+        "deploysPages": false,
+        "dispatchesTo": [],
+        "opensIssues": false,
+        "opensIssuesOnFailure": false,
+        "opensPullRequests": false,
+        "publishes": false,
+        "publishesTo": [],
+        "releases": false
+      },
+      "stages": [],
+      "triggers": [],
+      "uses": [],
+      "usesWorkflowToken": false
+    },
+    {
+      "checksCount": 0,
+      "commands": [],
+      "elsewhere": [],
+      "file": "pyproject.toml",
+      "kind": "command",
+      "landings": [],
+      "mentions": [],
+      "name": "fxdub-receipt",
+      "permissions": [],
+      "pushes": false,
+      "reach": [
+        {
+          "boundary": "tools",
+          "depth": 0,
+          "files": 2
+        }
+      ],
+      "readers": [],
+      "runs": [
+        {
+          "path": "tools/audition_receipt.py",
+          "runKind": "executes"
+        }
+      ],
+      "runsCount": 1,
+      "secrets": [],
+      "sends": {
+        "deploysPages": false,
+        "dispatchesTo": [],
+        "opensIssues": false,
+        "opensIssuesOnFailure": false,
+        "opensPullRequests": false,
+        "publishes": false,
+        "publishesTo": [],
+        "releases": false
+      },
+      "stages": [],
+      "triggers": [],
+      "uses": [],
+      "usesWorkflowToken": false
     }
   ],
-  "edges": [],
+  "edges": [
+    {
+      "from": "tests",
+      "fromTests": true,
+      "kind": "file",
+      "to": "tools"
+    }
+  ],
+  "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "ebdab0612a97aa09f05d77588564dcd60b0dbb2d",
+    "commit": "8bb7ee7a8362d980f7286d7cdfe0d859be859a97",
     "tracked": 178
   },
   "landings": [
@@ -1409,6 +2208,12 @@
           "call": "literal",
           "confidence": "ast",
           "fromTests": true
+        },
+        {
+          "by": "tests/test_workflows.py",
+          "call": "open",
+          "confidence": "ast",
+          "fromTests": true
         }
       ],
       "target": ".github/workflows/ci.yml",
@@ -1419,6 +2224,12 @@
         {
           "by": "tests/test_docs.py",
           "call": "literal",
+          "confidence": "ast",
+          "fromTests": true
+        },
+        {
+          "by": "tests/test_docs.py",
+          "call": "open",
           "confidence": "ast",
           "fromTests": true
         }
@@ -1440,7 +2251,8 @@
     {
       "readers": [
         {
-          "by": ".github/workflows/ci.yml"
+          "by": ".github/workflows/ci.yml",
+          "confidence": "config"
         }
       ],
       "target": "SECURITY.md",
@@ -1577,11 +2389,6 @@
     {
       "readers": [
         {
-          "by": "kb/build_db.py",
-          "call": "literal",
-          "confidence": "ast"
-        },
-        {
           "by": "tests/test_docs.py",
           "call": "literal",
           "confidence": "ast",
@@ -1597,19 +2404,20 @@
       "target": "kb/fxdub.db",
       "writers": [
         {
-          "by": "tests/test_kb.py",
-          "confidence": "ast",
-          "stamps": true
+          "by": "kb/build_db.py",
+          "confidence": "ast"
         }
       ]
     },
     {
       "readers": [
         {
-          "by": ".github/workflows/ci.yml"
+          "by": ".github/workflows/ci.yml",
+          "confidence": "config"
         },
         {
-          "by": ".github/workflows/release.yml"
+          "by": ".github/workflows/release.yml",
+          "confidence": "config"
         },
         {
           "by": "tests/test_audition_receipt.py",
