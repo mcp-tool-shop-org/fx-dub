@@ -32,6 +32,8 @@ def build_one_of_each():
             "ref.flac", "The speaker is @Audio1.\n\nHey.", "fx/b"),
         "elevenlabs_clone_tts": vo_graphs.elevenlabs_clone_tts(
             "ref.flac", "Hey there.", "fx/c"),
+        "elevenlabs_sfx": vo_graphs.elevenlabs_sfx(
+            "quill scratch on parchment, ledger shut", "fx/sfx", duration=0.8),
         "splice": vo_graphs.splice("clip.flac", [(0.3, 0.7), (2.7, 0.9)], "fx/d"),
         "place": vo_graphs.place("clip.flac", 2.28, "fx/e"),
         "mix": vo_graphs.mix("a.flac", "b.flac", "fx/f", gain_b_db=-12),
@@ -56,7 +58,7 @@ class StructureTests(unittest.TestCase):
 
     def test_audio_producing_builders_terminate_in_a_saver(self):
         for name in ("bytedance_text_only", "bytedance_audio_reference",
-                     "elevenlabs_clone_tts", "splice", "place", "mix"):
+                     "elevenlabs_clone_tts", "elevenlabs_sfx", "splice", "place", "mix"):
             types = {n["class_type"] for n in self.graphs[name].values()}
             self.assertIn("SaveAudioAdvanced", types, name)
 
@@ -194,6 +196,50 @@ class PackageVersionTests(unittest.TestCase):
     def test_version_is_pep440_release(self):
         import re
         self.assertRegex(self._pyproject_version(), r"^\d+\.\d+\.\d+$")
+
+
+class SfxBuilderTests(unittest.TestCase):
+    """One-shot SFX via ElevenLabsTextToSoundEffects / eleven_sfx_v2."""
+
+    def test_emits_dotted_dynamic_combo_keys_and_saves_flac(self):
+        g = vo_graphs.elevenlabs_sfx(
+            "distant cannon report, timber splinter", "portlight/enc_hit",
+            duration=0.7, loop=False, prompt_influence=0.4)
+        self.assertEqual([], graph_lint.api_structural_findings(g))
+        self.assertEqual(set(), graph_lint.fired_api(g))
+        node = [n for n in g.values()
+                if n["class_type"] == "ElevenLabsTextToSoundEffects"][0]
+        inputs = node["inputs"]
+        self.assertEqual("eleven_sfx_v2", inputs["model"])
+        self.assertIn("model.duration", inputs)
+        self.assertIn("model.loop", inputs)
+        self.assertIn("model.prompt_influence", inputs)
+        self.assertNotIn("duration", inputs)
+        self.assertEqual(0.7, inputs["model.duration"])
+        self.assertIs(False, inputs["model.loop"])
+        self.assertEqual(0.4, inputs["model.prompt_influence"])
+        self.assertEqual("opus_48000_192", inputs["output_format"])
+        save = [n for n in g.values() if n["class_type"] == "SaveAudioAdvanced"][0]
+        self.assertEqual("flac", save["inputs"]["format"])
+
+    def test_rejects_duration_below_schema_floor(self):
+        with self.assertRaises(ValueError):
+            vo_graphs.elevenlabs_sfx("soft thud", "fx/x", duration=0.49)
+
+    def test_rejects_duration_above_schema_ceiling(self):
+        with self.assertRaises(ValueError):
+            vo_graphs.elevenlabs_sfx("soft thud", "fx/x", duration=30.1)
+
+    def test_rejects_prompt_influence_out_of_range(self):
+        with self.assertRaises(ValueError):
+            vo_graphs.elevenlabs_sfx("soft thud", "fx/x", prompt_influence=1.1)
+
+    def test_allows_mp3_output_format(self):
+        g = vo_graphs.elevenlabs_sfx("coins on wood", "fx/x",
+                                    duration=0.5, output_format="mp3_44100_192")
+        node = [n for n in g.values()
+                if n["class_type"] == "ElevenLabsTextToSoundEffects"][0]
+        self.assertEqual("mp3_44100_192", node["inputs"]["output_format"])
 
 
 class PictureStageTests(unittest.TestCase):

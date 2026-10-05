@@ -4,6 +4,18 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`vo_graphs.elevenlabs_sfx`** — one-shot SFX builder for
+  `ElevenLabsTextToSoundEffects` / `eleven_sfx_v2`. Positive-claim text → FLAC
+  via `SaveAudioAdvanced`. Dynamic-combo fields are sent as dotted keys
+  (`model.duration`, `model.loop`, `model.prompt_influence`); duration below
+  0.5 s raises `ValueError` to match the Comfy schema floor. Default output is
+  `opus_48000_192` (48 kHz native). Closes the Portlight P0 generation-lane gap
+  where Omni already spent via MCP but the documented builder did not exist.
+
 ## [1.2.0] — 2026-09-14
 
 ### Fixed

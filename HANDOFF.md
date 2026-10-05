@@ -4,6 +4,8 @@
 
 **Written 2026-08-23 at the end of session 5 (supersedes all earlier text).** Read [`AGENTS.md`](AGENTS.md) first — it is the durable operating manual — then this file for live state, then query `kb/fxdub.db`.
 
+> **⭐ AMENDED 2026-10-05 — one-shot SFX builder.** `vo_graphs.elevenlabs_sfx(text, prefix, duration=1.0, …)` → `ElevenLabsTextToSoundEffects` / `eleven_sfx_v2` (positive claims; duration ≥0.5 s; default `opus_48000_192`). Portlight P0 generation lane no longer has to hand-author this graph.
+>
 > **⭐ AMENDED 2026-09-14 (session 6) — v1.2.0 IS SHIPPED.**
 > **Version:** v1.2.0 on PyPI (Trusted Publishing, run 34907480151). **Tests: 284**, not the 197 stated below — and `AGENTS.md` said 158 for two sessions before that. Re-measure, don't quote.
 > **New:** `fxdub.verify`, the declared public API; `dialogue_receipt` is reimplemented on it.
@@ -161,14 +163,14 @@ Full list: `SELECT * FROM v_open_actions;` — 16 open.
 | 7 | Re-read from **our** surface any schema claim the in-app agent made about conditional sub-fields (§3.5). | advisor |
 | 8 | Fold the session-4 and session-5 measurements into the next readouts `model-knowledge` wave. | advisor |
 | 9 | Record the missing session-4 job_ids in `RUNS`. Lower value now that provenance is proven byte-identical. | advisor |
-| 10 | Extend `dialogue_receipt` to the assembled **mix**; spot-effects timeline; local-GPU lane. | future |
+| 10 | Extend `dialogue_receipt` to the assembled **mix**; spot-effects *timeline* (placement); local-GPU lane. One-shot SFX generation: use `vo_graphs.elevenlabs_sfx`. | future |
 
 ## 5. How this project works
 
 - **Both receipts, always.** `audition_receipt.py` for the container, `dialogue_receipt.py` for content. A take can pass the first and be unusable.
 - **A failing check is a finding.** Report it; never tune a threshold. Two checks have been *corrected* rather than tuned — both because they measured the wrong quantity, and the reasoning is in their docstrings.
 - **When a trap is found, the SAME commit adds the detector, the `kb/build_db.py` seed, and the test.** Not "circle back later."
-- **Graphs are code.** `tools/vo_graphs.py` builds the VO shapes *and* the picture stage, and every builder is linted by `graph_lint.API_DETECTORS`. **Session 5 hand-typed every lip-sync graph into a chat window anyway — through an entire paid run — and only noticed on opening the file and finding `place()` and `mix()` already there. Open this module before you author a graph.**
+- **Graphs are code.** `tools/vo_graphs.py` builds the VO shapes, **one-shot SFX** (`elevenlabs_sfx`), *and* the picture stage, and every builder is linted by `graph_lint.API_DETECTORS`. **Session 5 hand-typed every lip-sync graph into a chat window anyway — through an entire paid run — and only noticed on opening the file and finding `place()` and `mix()` already there. Open this module before you author a graph.**
 - **Isolate unproven nodes into their own job.** ComfyUI does not persist outputs of nodes that completed before an error.
 - **You can author and run graphs directly.** `submit_workflow` takes API JSON; no agent round trip is needed to test a hypothesis. In round 11 the round trip returned an answer that would have deleted a working route.
 - **Briefs name their paste target on line 1.** Three document kinds live in `docs/briefs/` — `*-brief.md` (outbound, names a target), `*-verification.md` (ours, never does), `*-reply.md` (the agent's words, never does, and **may never be archived without a paired verification** — enforced by `test_docs.py`, which caught this once in session 5).
