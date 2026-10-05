@@ -60,6 +60,13 @@ clone = vo_graphs.elevenlabs_clone_tts("ref.flac", "hi", "smoke/vo")
 node = [n for n in clone.values() if n["class_type"] == "ElevenLabsInstantVoiceClone"][0]
 assert "files.audio0" in node["inputs"], "clone builder regressed to the advertised slot name"
 
+# one-shot SFX must use dotted dynamic-combo keys (flat duration fails required_input_missing)
+sfx = vo_graphs.elevenlabs_sfx("quill scratch on parchment", "smoke/sfx", duration=0.8)
+sfx_node = [n for n in sfx.values() if n["class_type"] == "ElevenLabsTextToSoundEffects"][0]
+assert sfx_node["inputs"]["model"] == "eleven_sfx_v2"
+assert "model.duration" in sfx_node["inputs"], "SFX builder must use dotted model.duration"
+assert "duration" not in sfx_node["inputs"], "flat duration is a required_input_missing trap"
+
 # the content verifier must reject speech the script never asked for
 scene = {"clip_duration_s": 10.0, "lines": [{"speaker": "A", "text": "hello there"}]}
 words = [

@@ -151,8 +151,9 @@ the public path cannot quietly become one nobody exercises.
 ## Graph builders
 
 `fxdub.vo_graphs` also builds the VO-stage graphs: voice design, same-engine audio
-reference, clone-and-speak, splice, place-on-timeline, mix — and the picture stage:
-frame extract, lip-sync, and mux. They exist because the alternative — hand-typing
+reference, clone-and-speak, one-shot SFX (`elevenlabs_sfx` → `eleven_sfx_v2`),
+splice, place-on-timeline, mix — and the picture stage: frame extract, lip-sync,
+and mux. They exist because the alternative — hand-typing
 API JSON into a chat window — produces graphs that vanish with the session and
 quietly reintroduce defects already paid for once.
 

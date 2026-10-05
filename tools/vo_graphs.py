@@ -125,6 +125,49 @@ def elevenlabs_clone_tts(reference_key, text, prefix, stability=0.5, speed=1.0,
     return graph
 
 
+def elevenlabs_sfx(text, prefix, duration=1.0, loop=False, prompt_influence=0.3,
+                   output_format="opus_48000_192"):
+    """One-shot sound effect from a positive-claim text prompt.
+
+    Uses ``ElevenLabsTextToSoundEffects`` / ``eleven_sfx_v2`` — the documented
+    Portlight / fx-dub SFX lane. Duration is clamped by the Comfy schema to
+    0.5–30 s; values under 0.5 raise ``ValueError`` (same style as
+    :func:`place_exact`) rather than silently rounding up.
+
+    Prefer ``opus_48000_192`` so the take lands at ``RUNTIME_SAMPLE_RATE``.
+    ``mp3_44100_192`` is allowed when the caller needs it. Prompts must be
+    positive claims ("quill scratch on parchment, ledger shut") — not
+    negations ("no music", "without reverb").
+    """
+    duration = float(duration)
+    if duration < 0.5:
+        raise ValueError(
+            "duration {0} is below ElevenLabsTextToSoundEffects floor of 0.5 s"
+            .format(duration))
+    if duration > 30.0:
+        raise ValueError(
+            "duration {0} exceeds ElevenLabsTextToSoundEffects max of 30 s"
+            .format(duration))
+    influence = float(prompt_influence)
+    if not 0.0 <= influence <= 1.0:
+        raise ValueError(
+            "prompt_influence {0} must be in 0..1".format(influence))
+    allowed_formats = ("opus_48000_192", "mp3_44100_192")
+    if output_format not in allowed_formats:
+        raise ValueError(
+            "output_format {0!r} not in {1}".format(output_format, allowed_formats))
+    graph = {"1": {"class_type": "ElevenLabsTextToSoundEffects", "inputs": {
+        "text": text,
+        "model": "eleven_sfx_v2",
+        "model.duration": duration,
+        "model.loop": bool(loop),
+        "model.prompt_influence": influence,
+        "output_format": output_format,
+    }}}
+    graph.update(_save("2", ["1", 0], prefix))
+    return graph
+
+
 def splice(storage_key, keep_spans, prefix):
     """Keep only ``keep_spans`` of a clip, butt-joined in order.
 
