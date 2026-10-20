@@ -83,7 +83,7 @@ jobs:
           path: dist/
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
 
       # Attach the SAME artifacts that just went to the index. PyPI remains the
       # distribution channel; these exist so the Release page is self-contained
