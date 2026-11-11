@@ -115,7 +115,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "tests",
-      "qualifyingSourceCommits": 16,
+      "qualifyingSourceCommits": 17,
       "rebaseline": null
     },
     {
@@ -133,7 +133,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "tools",
-      "qualifyingSourceCommits": 12,
+      "qualifyingSourceCommits": 13,
       "rebaseline": null
     },
     {
@@ -157,8 +157,8 @@
     "definition": "commits is how many commits in the window touch the file, including merges and commits dropped from coupling. lines is added plus deleted in those commits.",
     "files": [
       {
-        "commits": 7,
-        "lines": 170,
+        "commits": 9,
+        "lines": 174,
         "path": ".github/workflows/ci.yml"
       },
       {
@@ -167,8 +167,8 @@
         "path": ".github/workflows/pages.yml"
       },
       {
-        "commits": 2,
-        "lines": 102,
+        "commits": 3,
+        "lines": 104,
         "path": ".github/workflows/release.yml"
       },
       {
@@ -177,18 +177,18 @@
         "path": ".gitignore"
       },
       {
-        "commits": 14,
-        "lines": 209,
+        "commits": 15,
+        "lines": 215,
         "path": "AGENTS.md"
       },
       {
-        "commits": 9,
-        "lines": 367,
+        "commits": 10,
+        "lines": 379,
         "path": "CHANGELOG.md"
       },
       {
-        "commits": 13,
-        "lines": 966,
+        "commits": 14,
+        "lines": 972,
         "path": "HANDOFF.md"
       },
       {
@@ -222,8 +222,8 @@
         "path": "README.ja.md"
       },
       {
-        "commits": 12,
-        "lines": 470,
+        "commits": 13,
+        "lines": 475,
         "path": "README.md"
       },
       {
@@ -252,8 +252,8 @@
         "path": "SHIP_GATE.md"
       },
       {
-        "commits": 1,
-        "lines": 78,
+        "commits": 3,
+        "lines": 176,
         "path": "atlas/README.md"
       },
       {
@@ -262,18 +262,18 @@
         "path": "atlas/boundaries.yaml"
       },
       {
-        "commits": 1,
-        "lines": 186,
+        "commits": 3,
+        "lines": 670,
         "path": "atlas/page.json"
       },
       {
-        "commits": 1,
-        "lines": 1206,
+        "commits": 3,
+        "lines": 1316,
         "path": "atlas/statistics.json"
       },
       {
-        "commits": 1,
-        "lines": 1837,
+        "commits": 3,
+        "lines": 3817,
         "path": "atlas/structure.json"
       },
       {
@@ -842,8 +842,8 @@
         "path": "site/astro.config.mjs"
       },
       {
-        "commits": 2,
-        "lines": 13624,
+        "commits": 4,
+        "lines": 13636,
         "path": "site/package-lock.json"
       },
       {
@@ -987,8 +987,8 @@
         "path": "tests/test_verify.py"
       },
       {
-        "commits": 4,
-        "lines": 276,
+        "commits": 5,
+        "lines": 324,
         "path": "tests/test_vo_graphs.py"
       },
       {
@@ -1027,13 +1027,13 @@
         "path": "tools/verify.py"
       },
       {
-        "commits": 2,
-        "lines": 416,
+        "commits": 3,
+        "lines": 459,
         "path": "tools/vo_graphs.py"
       },
       {
-        "commits": 2,
-        "lines": 80,
+        "commits": 3,
+        "lines": 87,
         "path": "verify.sh"
       },
       {
@@ -1077,31 +1077,31 @@
     "level": "low",
     "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-09-30T20:09:45.081Z",
+  "generatedAt": "2026-11-11T22:17:48.957Z",
   "generatedFrom": {
-    "commit": "8bb7ee7a8362d980f7286d7cdfe0d859be859a97"
+    "commit": "fb4f362ccac1844047aa5b240dc0eafa3b11e816"
   },
   "pairs": [
     {
       "a": "CHANGELOG.md",
       "b": "README.md",
-      "either": 14,
-      "shared": 7,
-      "strength": 0.5
+      "either": 15,
+      "shared": 8,
+      "strength": 0.533333
     },
     {
       "a": "CHANGELOG.md",
       "b": "pyproject.toml",
-      "either": 9,
+      "either": 10,
       "shared": 5,
-      "strength": 0.555556
+      "strength": 0.5
     },
     {
       "a": "CHANGELOG.md",
       "b": "tools/__init__.py",
-      "either": 9,
+      "either": 10,
       "shared": 6,
-      "strength": 0.666667
+      "strength": 0.6
     },
     {
       "a": "README.es.md",
@@ -1198,16 +1198,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-09-25T03:01:41-07:00",
+    "headDate": "2026-10-20T17:01:04-04:00",
     "inScopeFiles": 183,
     "pinnedStart": null,
     "priorFloor": "fallen",
-    "qualifyingCommits": 43,
+    "qualifyingCommits": 47,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-03-29T10:01:41.000Z",
+    "since": "2026-04-23T21:01:04.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",

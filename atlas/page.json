@@ -38,68 +38,23 @@
   "changes": {
     "fileCounts": {
       "added": 0,
-      "changed": 1,
+      "changed": 10,
       "moved": 0,
-      "parts": 1,
+      "parts": 5,
       "removed": 0
     },
     "items": [
       {
-        "kind": "import-added",
-        "sentence": "tests now imports tools.",
-        "subjects": [
-          "tests",
-          "tools"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "ci now also runs tests/.",
-        "subjects": [
-          ".github/workflows/ci.yml",
-          "tests/"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "release now also runs tests/.",
-        "subjects": [
-          ".github/workflows/release.yml",
-          "tests/"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "fxdub-dialogue (pyproject.toml) is a new command. It runs tools/dialogue_receipt.py.",
-        "subjects": [
-          "pyproject.toml",
-          "tools/dialogue_receipt.py"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "And 1 more change to a door.",
-        "subjects": []
-      },
-      {
-        "kind": "landing",
-        "sentence": "kb/fxdub.db is now also written by kb/build_db.py.",
-        "subjects": [
-          "kb/fxdub.db",
-          "kb/build_db.py"
-        ]
-      },
-      {
         "kind": "counts",
-        "sentence": "1 file changed content, across 1 part.",
+        "sentence": "Nothing structural changed since 2026-09-30; 10 files changed content.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "ebdab0612a97aa09f05d77588564dcd60b0dbb2d",
-      "generatedAt": "2026-09-25T09:37:31.024Z"
+      "commit": "8bb7ee7a8362d980f7286d7cdfe0d859be859a97",
+      "generatedAt": "2026-09-30T20:09:45.081Z"
     },
-    "unchanged": false
+    "unchanged": true
   },
   "changesTogether": [],
   "changesTogetherNote": [
@@ -107,7 +62,7 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 1 source file reaches 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 1,
-  "commit": "8bb7ee7a8362d980f7286d7cdfe0d859be859a97",
+  "commit": "fb4f362ccac1844047aa5b240dc0eafa3b11e816",
   "defaultBranch": "main",
   "derived": "9 parts, mostly Python (22 files), CSS (2), TypeScript (2), Astro (1), JavaScript (1) and shell (1). Work enters through 5 doors; ci and release each reach 3 parts, and ci is followed because a pull request goes through it. It publishes to PyPI. It deploys a site to GitHub Pages. People run fxdub-dialogue and fxdub-receipt.",
   "doors": [
@@ -291,7 +246,7 @@
       "to": "tools"
     }
   ],
-  "engine": "1.24.0",
+  "engine": "1.26.0",
   "generated": [
     {
       "place": "kb/fxdub.db",
@@ -300,7 +255,7 @@
       ]
     }
   ],
-  "generatedAt": "2026-09-30T20:09:45.081Z",
+  "generatedAt": "2026-11-11T22:17:48.957Z",
   "limits": [
     "1 import could not be resolved: `tools/dialogue_receipt.py` imports `verify`, which is no module on its import path and no declared dependency.",
     "2 writes and 6 reads go to a path their caller passes, not to this repository.",
@@ -340,6 +295,7 @@
     "kb": 0,
     "tools": 5
   },
+  "testedCodeParts": 2,
   "unnamedWrites": 0,
   "unread": [],
   "unreadFiles": 0,
